@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* 👇 This is the key fix — ensure React's JSX types are loaded */
+    "types": ["react", "react-dom"],
+
+    /* Path Aliases */
+    "baseUrl": "./resources/js",
+    "paths": {
+      "@/*": ["*"]
+    },
+
+    /* Libraries */
+    "lib": ["DOM", "DOM.Iterable", "ESNext"]
+  },
+  "include": ["resources/js/**/*.ts", "resources/js/**/*.tsx", "resources/js/**/*.d.ts"]
+}
