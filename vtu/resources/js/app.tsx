@@ -19,7 +19,7 @@ if (typeof window !== 'undefined') {
     window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 }
 
-const appName = import.meta.env.VITE_APP_NAME
+const appName = import.meta.env.VITE_APP_NAME || 'Payless Data'
 
 createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),
