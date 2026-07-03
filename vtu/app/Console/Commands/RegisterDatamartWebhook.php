@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 class RegisterDatamartWebhook extends Command
 {
     protected $signature = 'datamart:register-webhook';
-    protected $description = 'Register SmartTopup webhook URL with Datamart API';
+    protected $description = 'Register Payless Data webhook URL with Datamart API';
 
     public function handle()
     {

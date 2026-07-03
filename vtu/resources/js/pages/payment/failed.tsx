@@ -52,10 +52,10 @@ const PaymentFailed: React.FC = () => {
                             If money was deducted, please contact support immediately:
                         </p>
                         <a 
-                            href="mailto:admin@smarttopup.net" 
+                            href="mailto:admin@paylessdata.net"
                             className="text-red-400 font-bold text-lg hover:text-red-300 transition underline"
                         >
-                            admin@smarttopup.net
+                            admin@paylessdata.net
                         </a>
                     </div>
 
@@ -71,7 +71,7 @@ const PaymentFailed: React.FC = () => {
                     </button>
 
                     <div className="mt-8 text-sm text-gray-500">
-                        <p>{store_name || 'Smart Top-Up Store'}</p>
+                        <p>{store_name || 'Payless Data Store'}</p>
                     </div>
                 </div>
             </div>

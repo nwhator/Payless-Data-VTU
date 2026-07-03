@@ -13,7 +13,7 @@ import AgentCommissions from "@/components/Agent/AgentCommissions";
 import { toast } from "sonner";
 // Assuming you have access to the authenticated user object, e.g., via Inertia's usePage or a context.
 // For this example, we'll simulate getting the Agent's name.
-const AGENT_NAME = "Smart Top-Up Agent"; 
+const AGENT_NAME = "Payless Data Agent";
 
 // --- Helper function to map active tab key to readable title/description ---
 const getMetaContent = (activeKey: string) => {
@@ -145,7 +145,7 @@ const Dashboard: React.FC = () => {
                         )}
 
                         {/* Agent Purchases */}
-                        {active === "purchases" && <AgentPurchases loading={loading} />} 
+                        {active === "purchases" && <AgentPurchases />} 
 
                         {/* Agent Store */}
                         {active === "store" && (
@@ -161,12 +161,12 @@ const Dashboard: React.FC = () => {
 
                         {/* Agent Commissions */}
                         {active === "commissions" && (
-                            <AgentCommissions loading={loading} />
+                            <AgentCommissions />
                         )}
 
                         {/* Wallet Management */}
                         {active === "wallet" && (
-                            <WalletManagement loading={loading} />
+                            <WalletManagement />
                         )}
 
                         {/* Agent Profile */}

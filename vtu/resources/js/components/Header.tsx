@@ -57,7 +57,7 @@ export default function Header({
 
         <div>
           <div className={`font-semibold text-lg ${brandText}`}>
-            SmartTopUp
+            Payless Data
           </div>
           <div className="text-xs text-slate-400 -mt-0.5">
             Instant Airtime & Data

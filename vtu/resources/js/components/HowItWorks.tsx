@@ -13,7 +13,7 @@ const steps = [
 export default function HowItWorks() {
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center md:text-left">How SmartTopUp works</h2>
+      <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center md:text-left">How Payless Data works</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {steps.map((step, i) => (
           <motion.div key={i} whileHover={{ y: -4 }} className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 text-center">

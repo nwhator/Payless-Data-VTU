@@ -9,24 +9,24 @@
 <!-- 1. SEO & Core Meta Tags -->
 <meta name="description" content="The leading VTU platform in Ghana for agents and customers to manage digital product sales, track commissions, and process instant data and airtime top-ups.">
 <meta name="keywords" content="VTU, Ghana, VTU in Ghana, data, airtime, top-up, commissions, agent, reseller, mobile, telecom, instant payment, ghana, nigeria">
-<meta name="author" content="{{ config('app.name', 'Smart Top-Up') }}">
+<meta name="author" content="{{ config('app.name', 'Payless Data') }}">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="{{ url()->current() }}">
 
 <!-- 2. Open Graph (OG) Tags for Facebook, LinkedIn, etc. -->
-<meta property="og:title" content="{{ $page['props']['title'] ?? config('app.name', 'Smart Top-Up') }}">
+<meta property="og:title" content="{{ $page['props']['title'] ?? config('app.name', 'Payless Data') }}">
 <meta property="og:description" content="The leading platform for agents and customers to manage digital product sales, track commissions, and process instant data and airtime top-ups.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ url()->current() }}">
 <meta property="og:image" content="{{ asset('images/social-share-image.jpg') }}">
-<meta property="og:site_name" content="{{ config('app.name', 'Smart Top-Up') }}">
+<meta property="og:site_name" content="{{ config('app.name', 'Payless Data') }}">
 <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <!-- 3. Twitter Card Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@SmartTopUp">
-<meta name="twitter:creator" content="@SmartTopUp">
-<meta name="twitter:title" content="{{ $page['props']['title'] ?? config('app.name', 'Smart Top-Up') }}">
+<meta name="twitter:site" content="@PaylessData">
+<meta name="twitter:creator" content="@PaylessData">
+<meta name="twitter:title" content="{{ $page['props']['title'] ?? config('app.name', 'Payless Data') }}">
 <meta name="twitter:description" content="The leading platform for agents and customers to manage digital product sales, track commissions, and process instant data and airtime top-ups.">
 <meta name="twitter:image" content="{{ asset('images/social-share-image.jpg') }}">
 
@@ -61,7 +61,7 @@
     }
 </style>
 
-<title inertia>{{ $page['props']['title'] ?? config('app.name', 'Smart Top-Up') }}</title>
+<title inertia>{{ $page['props']['title'] ?? config('app.name', 'Payless Data') }}</title>
 
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">

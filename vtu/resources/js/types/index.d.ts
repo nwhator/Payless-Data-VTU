@@ -1,6 +1,6 @@
 import { InertiaLinkProps } from "@inertiajs/react"
 import { LucideIcon } from "lucide-react"
-import type { User } from "./user" // ✅ your existing User interface
+export type { User } from "./user" // ✅ your existing User interface
 
 // 🧩 Product interface
 export interface Product {

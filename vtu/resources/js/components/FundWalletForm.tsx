@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface UpgradeToAgentFormProps {
   userId: number;
   userEmail: string;
-  upgradeFee: number; // e.g., 50.00 GHS
+  upgradeFee?: number; // e.g., 50.00 GHS
   onSuccess?: () => void;
 }
 
@@ -21,7 +21,7 @@ interface PaymentBreakdown {
 export default function UpgradeToAgentForm({ 
   userId, 
   userEmail, 
-  upgradeFee,
+  upgradeFee = 20,
   onSuccess 
 }: UpgradeToAgentFormProps) {
   const [loading, setLoading] = useState(false);

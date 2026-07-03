@@ -119,7 +119,7 @@ const AgentStore: React.FC<{
             if (response.success) {
                 toast.success("🚀 Store published successfully!")
                 if (store) setStore({ ...store, publish: "published" })
-            } else if (response.reason === "unpriced_products" || error.response?.status === 422) {
+            } else if (response.reason === "unpriced_products") {
                 // If 422 error or specific reason from server, show modal
                 setShowPublishModal(true)
             } else {
@@ -143,27 +143,6 @@ const AgentStore: React.FC<{
         }
     }
 
-    // Save (update) store changes
-    const saveStore = async (updated: StoreData): Promise<StoreData> => {
-        try {
-            // Note: Your update logic here needs the correct route/method (PUT/PATCH)
-            // Assuming the existing route `/agent/store/${updated.id}` is correct for PUT
-            const { data } = await axios.put(`/agent/store/${updated.id}`, updated, {
-                headers: { "X-CSRF-TOKEN": getCsrf() }
-            })
-            if (data.success) {
-                toast.success("✅ Store updated successfully!")
-                return data.store
-            } else {
-                toast.error("❌ Failed to update store")
-                return updated
-            }
-        } catch {
-            toast.error("❌ Error saving store")
-            return updated
-        }
-    }
-
     return (
         <div className="p-4 sm:p-6">
             {loading ? (
@@ -183,7 +162,6 @@ const AgentStore: React.FC<{
                         setStore(newStore)
                         setEditMode(false)
                     }}
-                    onSave={saveStore}
                 />
             ) : (
                 <StoreView

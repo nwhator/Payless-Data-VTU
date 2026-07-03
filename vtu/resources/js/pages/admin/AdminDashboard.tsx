@@ -79,14 +79,14 @@ const AdminDashboard: React.FC = () => {
 
         <main className="p-6">
           {active === "dashboard" && (
-            <DashboardSummary users={[]} setActive={setActive} apiStatus="Active" />
+            <DashboardSummary setActive={setActive} />
           )}
 
-          {active === "users" && <UserAndWalletManagement users={[]} />}
+          {active === "users" && <UserAndWalletManagement />}
 
-          {active === "requests" && <AgentRequests pendingRequests={[]} />}
+          {active === "requests" && <AgentRequests />}
 
-          {active === "pricing" && <PricesAndProfit products={[]} margins={{}} />}
+          {active === "pricing" && <PricesAndProfit />}
 
           {active === "wallets" && <WithdrawalRequests />}
 
@@ -95,7 +95,7 @@ const AdminDashboard: React.FC = () => {
               {loadingAgents ? (
                 <div className="text-slate-400 text-center py-10">Loading agents...</div>
               ) : (
-                <SendNotification agents={agents} />
+                <SendNotification />
               )}
             </div>
           )}

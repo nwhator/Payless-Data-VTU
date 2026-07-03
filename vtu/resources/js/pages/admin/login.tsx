@@ -57,7 +57,7 @@ export default function AdminLogin() {
                   background: "linear-gradient(90deg,#00C4FF,#4DFF8F)",
                 }}
               >
-                Smart Top-Up Admin Portal
+                Payless Data Admin Portal
               </div>
               {/* <div className="text-xs text-slate-400 -mt-0.5">
                 Admin Portal
@@ -149,7 +149,7 @@ export default function AdminLogin() {
         </div>
 
         <div className="mt-6 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} SmartTopUp
+          © {new Date().getFullYear()} Payless Data
         </div>
       </div>
     </div>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Wallet;
@@ -14,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\Commission;
 use App\Services\PricingService;
 use App\Services\PlatformService;
+use App\Services\IDataService;
 
 class VTUController extends Controller
 {
@@ -37,22 +37,9 @@ class VTUController extends Controller
             abort_if($wallet->balance < $displayPrice, 400, 'Insufficient wallet balance');
         }
 
-        $headers = [
-            'X-API-Key' => config('services.datamart.key'),
-            'X-API-Secret' => config('services.datamart.secret'),
-            'Content-Type' => 'application/json'
-        ];
-
-        $payload = [
-            'network' => $product->network,
-            'mobile_number' => $data['phone'],
-            'plan_code' => $product->api_code
-        ];
-
         DB::beginTransaction();
         try {
-            $response = Http::withHeaders($headers)
-                ->post(config('services.datamart.base') . '/v1/purchase/single', $payload);
+            $response = app(IDataService::class)->placeProductOrder($product, $data['phone']);
 
             $body = $response->json();
 
@@ -60,7 +47,7 @@ class VTUController extends Controller
                 throw new \Exception('Supplier topup failed: ' . json_encode($body));
             }
 
-            $ref = $body['data']['reference'] ?? uniqid('vtu_');
+            $ref = (string) ($body['order_id'] ?? uniqid('idata_'));
 
             // Debit supplier wallet
             $supplierWallet = SupplierWallet::firstOrFail();
@@ -109,7 +96,7 @@ class VTUController extends Controller
             return response()->json([
                 'message' => 'Topup successful',
                 'reference' => $ref,
-                'data' => $body['data'] ?? null
+                'data' => $body
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();

@@ -25,7 +25,7 @@ import Loader from "@/components/ui/loader";
 import PurchaseFormModal from "@/components/PurchaseFormModal";
 import { Button } from "@headlessui/react";
 
-export default function Welcome(): JSX.Element {
+export default function Welcome() {
   const page = usePage<SharedData>();
 
   const [currentUser, setCurrentUser] = useState<User | undefined>(
@@ -211,7 +211,7 @@ export default function Welcome(): JSX.Element {
               <h2 className="text-2xl font-semibold mb-2">Trusted by Ghanaians</h2>
               <p className="text-slate-400 max-w-lg mx-auto">
                 Join hundreds of users buying airtime & data safely with
-                SmartTopUp.
+                Payless Data.
               </p>
             </div>
           </div>
@@ -231,7 +231,6 @@ export default function Welcome(): JSX.Element {
             product={selectedProduct}
             walletBalance={walletBalance}
             onFundRequired={handleFundRequired}
-            onPurchase={handlePurchase}
             onOpenPurchaseForm={handleOpenPurchaseForm}
           />
         )}

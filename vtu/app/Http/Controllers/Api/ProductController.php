@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Jobs\SyncProductsFromSupplier;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\IDataService;
 
 class ProductController extends Controller
 {
@@ -22,22 +22,18 @@ class ProductController extends Controller
     }
 
     // Fetch capacities directly from supplier
-    public function fetchCapacities()
+    public function fetchCapacities(IDataService $idataService, Request $request)
     {
         try {
-            $res = Http::withHeaders([
-                'X-API-Key' => config('services.datamart.key'),
-                'X-API-Secret' => config('services.datamart.secret'),
-                'Content-Type' => 'application/json',
-            ])->get(config('services.datamart.base') . '/v1/capacities');
+            $res = $idataService->packages($request->query('network'));
 
             if ($res->failed()) {
-                return response()->json(['success' => false, 'message' => 'Failed to fetch capacities'], 400);
+                return response()->json(['success' => false, 'message' => 'Failed to fetch packages'], 400);
             }
 
             return response()->json($res->json());
         } catch (\Throwable $e) {
-            Log::error('Capacity fetch failed', ['message' => $e->getMessage()]);
+            Log::error('Package fetch failed', ['message' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Server error'], 500);
         }
     }

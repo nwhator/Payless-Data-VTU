@@ -51,7 +51,7 @@ const Sidebar: React.FC<Props> = ({ active, setActive, mobileOpen, onClose }) =>
               alt="Logo"
               className="w-9 h-9 object-contain"
             />
-            <h3 className="font-bold text-xl text-white">Smart Top-Up</h3>
+            <h3 className="font-bold text-xl text-white">Payless Data</h3>
           </Link>
 
           <p className="text-sm text-gray-400 mt-1">Customer Control</p>

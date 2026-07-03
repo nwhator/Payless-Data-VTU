@@ -272,6 +272,7 @@ export default function CustomerSummary({
           // CORRECTLY PASSING REQUIRED PROPS:
           userId={user.id} 
           userEmail={user.email} 
+          upgradeFee={20}
           onSuccess={handleFundSuccess} // Pass the handler to close the modal
         />
       </Modal>

@@ -5,8 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Services\IDataService;
 
 class ProductProxyController extends Controller
 {
@@ -110,54 +109,60 @@ class ProductProxyController extends Controller
      */
     public function syncSupplierProducts(Request $request)
     {
-        $base = config('services.datamart.base') ?? env('DATAMART_API_BASE');
-        $url = rtrim($base, '/') . '/products';
-
         try {
-            $res = Http::withHeaders([
-                'X-API-Key' => env('DATAMART_API_KEY'),
-                'X-API-Secret' => env('DATAMART_API_SECRET'),
-                'Accept' => 'application/json',
-            ])->timeout(10)->get($url);
+            $idataService = app(IDataService::class);
+            $networks = $request->filled('network')
+                ? [$request->string('network')->toString()]
+                : $idataService->availableNetworks();
 
-            if ($res->failed()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Supplier error',
-                    'detail' => $res->json(),
-                ], 502);
-            }
+            $count = 0;
 
-            $body = $res->json();
-            $items = $body['data']['products'] ?? ($body['products'] ?? []);
+            foreach ($networks as $network) {
+                $res = $idataService->packages($network);
 
-            foreach ($items as $item) {
-                Product::updateOrCreate(
-                    ['product_code' => $item['product_code']],
-                    [
-                        'name' => $item['name'] ?? '',
-                        'category' => $item['category'] ?? '',
-                        'capacity' => $item['capacity'] ?? null,
-                        'capacity_value' => $item['capacity_value'] ?? null,
-                        'capacity_unit' => $item['capacity_unit'] ?? null,
-                        'validity' => $item['validity'] ?? null,
-                        'price' => $item['price'] ?? 0,
-                        'currency' => $item['currency'] ?? 'GHS',
-                        'active' => ($item['status'] ?? 'inactive') === 'active',
-                        // 🧠 Do NOT touch customer_margin or agent_margin
-                    ]
-                );
+                if ($res->failed()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Supplier error',
+                        'network' => $network,
+                        'detail' => $res->json(),
+                    ], 502);
+                }
+
+                $body = $res->json();
+                $items = $body['packages'] ?? [];
+                $normalizedNetwork = $idataService->normalizeNetworkForProduct($body['network'] ?? $network);
+
+                foreach ($items as $item) {
+                    $dataSize = $item['data_size'] ?? null;
+
+                    Product::updateOrCreate(
+                        ['product_code' => (string) ($item['package_id'] ?? $item['label'] ?? $network . '-' . $dataSize)],
+                        [
+                            'name' => $normalizedNetwork . ' ' . ($dataSize !== null ? $dataSize . 'GB' : ($item['label'] ?? 'Bundle')),
+                            'category' => 'data',
+                            'network' => $normalizedNetwork,
+                            'capacity' => $dataSize !== null ? $dataSize . 'GB' : ($item['label'] ?? null),
+                            'capacity_value' => $dataSize,
+                            'capacity_unit' => 'GB',
+                            'validity' => $item['validity'] ?? null,
+                            'price' => (float) ($item['price'] ?? 0),
+                            'currency' => 'GHS',
+                            'active' => true,
+                        ]
+                    );
+
+                    $count++;
+                }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Products synced successfully',
-                'count' => count($items),
+                'message' => 'Packages synced successfully',
+                'count' => $count,
             ]);
         } catch (\Throwable $e) {
-            Log::error('Product sync failed', [
-                'message' => $e->getMessage(),
-            ]);
+            report($e);
 
             return response()->json([
                 'success' => false,

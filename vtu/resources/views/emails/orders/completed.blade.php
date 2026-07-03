@@ -20,5 +20,5 @@ View Order
 </x-mail::button>
 
 Thanks,<br>
-**Smart Top-Up Team**
+**Payless Data Team**
 </x-mail::message>

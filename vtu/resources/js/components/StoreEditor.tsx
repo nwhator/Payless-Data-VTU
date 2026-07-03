@@ -29,8 +29,8 @@ interface StoreEditorProps {
 
 interface BannerUrls {
   large: string
-  medium?: string
-  small?: string
+  medium: string
+  small: string
 }
 
 interface BannerData {
@@ -148,7 +148,7 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
       if (data?.url) {
         setBannerType("auto")
         setBannerPreviewUrl(data.url)
-        setBannerData({ urls: { large: data.url }, text: data.text })
+        setBannerData({ urls: { large: data.url, medium: data.url, small: data.url }, text: data.text })
         toast.success("✅ Auto banner generated!")
       } else toast.error("Failed to generate banner")
     } catch {

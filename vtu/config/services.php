@@ -35,10 +35,9 @@ return [
         ],
     ],
 
-    'datamart' => [
-        'base' => env('DATAMART_API_BASE'),
-        'key' => env('DATAMART_API_KEY'),
-        'secret' => env('DATAMART_API_SECRET'),
+    'idata' => [
+        'base_url' => env('IDATA_API_BASE', 'https://idatagh.com/wp-json/custom/v1'),
+        'api_key' => env('IDATA_API_KEY'),
     ],
 
     'paystack' => [

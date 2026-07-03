@@ -12,6 +12,7 @@ use App\Services\PaystackService;
 use App\Services\PaystackFeeService;
 use App\Services\TransactionService;
 use App\Services\WalletService;
+use App\Services\IDataService;
 use App\Models\Transaction; 
 use App\Models\Order; 
 use Illuminate\Support\Facades\Http;
@@ -415,17 +416,9 @@ class AgentPurchaseController extends Controller
             'user_agent'          => $userAgent,
         ]);
 
-        // 2. Call Datamart Vendor API
-        $res = Http::withHeaders([
-            'X-API-Key'     => config('services.datamart.key'),
-            'X-API-Secret'  => config('services.datamart.secret'),
-            'Content-Type'  => 'application/json',
-        ])->post('https://server-datamart-reseller.onrender.com/api/v1/purchase', [
-            'capacity'              => $product->capacity,
-            'product_name'          => $product->name,
-            'beneficiary_number'    => $beneficiaryNumber,
-            'reference'             => $reference,
-        ]);
+        // 2. Call iDATA Vendor API
+        $idataService = app(IDataService::class);
+        $res = $idataService->placeProductOrder($product, $beneficiaryNumber);
 
         $vendorResponse = $res->json();
         $success = $vendorResponse['success'] ?? ($res->successful() ? true : false); // Use top-level 'success' first, then HTTP status
@@ -435,7 +428,7 @@ class AgentPurchaseController extends Controller
         $finalStatus = 'failed';
 
         if ($success) {
-            $finalStatus = $vendorResponse['data']['status'] ?? 'pending';
+            $finalStatus = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
             
             // 3. Update order status + vendor response
             $order->update([

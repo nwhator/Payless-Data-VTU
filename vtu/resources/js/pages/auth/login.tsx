@@ -52,7 +52,7 @@ export default function Login() {
 
             <div>
               <div className="text-lg font-semibold text-gray-800">
-                Smart Top-Up Portal
+                Payless Data Portal
               </div>
               <div className="text-xs text-gray-500">
                 Log in to your account
@@ -173,7 +173,7 @@ export default function Login() {
         </div>
 
         <div className="mt-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} SmartTopUp. All rights reserved.
+          © {new Date().getFullYear()} Payless Data. All rights reserved.
         </div>
       </div>
     </div>

@@ -569,7 +569,7 @@ const PublicStore: React.FC = () => {
             className="py-8 text-center text-slate-500 text-sm border-t"
             style={{ borderColor: "#2A2A33", backgroundColor: BACKGROUND_DARK }}
           >
-            &copy; {new Date().getFullYear()} {store.store_name} from Smart Top-Up. All rights reserved.
+            &copy; {new Date().getFullYear()} {store.store_name} from Payless Data. All rights reserved.
           </footer>
         </div>
   

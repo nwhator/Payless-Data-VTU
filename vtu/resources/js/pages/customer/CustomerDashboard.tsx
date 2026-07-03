@@ -52,6 +52,7 @@ interface PageProps {
   wallet: WalletData;
   totalPurchases: number;
   products?: Product[];
+  [key: string]: unknown;
 }
 
 // NEW ORDER TYPE (must match the structure returned by your backend getOrders API)
@@ -133,7 +134,7 @@ export default function CustomerDashboard() {
 
   // purchase modal
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
   /* ---------------- URL PARAMS (ALERT HANDLING) ---------------- */
   const searchParams = useMemo(

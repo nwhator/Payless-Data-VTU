@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ active, setActive, mobileOpen = false
             alt="Logo"
             className="w-10 h-10 object-contain"
           />
-          <h3 className="font-bold text-xl text-white">Smart Top-Up</h3>
+          <h3 className="font-bold text-xl text-white">Payless Data</h3>
         </Link>
 
         <p className="text-sm text-gray-400 mt-1">Admin Control</p>

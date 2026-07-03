@@ -24,7 +24,7 @@ console.error("Error reading CSRF token from cookie:",e);
 return null;
 }
 }
-export default function PricesAndProfit({margins}:{margins:MarginSetting}){
+export default function PricesAndProfit({margins}:{margins?:MarginSetting}){
 const[products,setProducts]=useState<ProductType[]>([])
 const[loading,setLoading]=useState(true)
 const[syncing,setSyncing]=useState(false)

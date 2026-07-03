@@ -13,6 +13,7 @@ interface PageProps {
   auth: {
     user: AuthUser
   }
+  [key: string]: unknown
 }
 
 interface Agent {

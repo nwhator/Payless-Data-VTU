@@ -23,7 +23,7 @@ export default function Navbar({ active, setActive, onMenuClick }: NavbarProps) 
   const initials = admin?.name
     ? admin.name
         .split(" ")
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)

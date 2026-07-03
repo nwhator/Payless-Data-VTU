@@ -31,7 +31,7 @@ class OrderCompletedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '✅ Order #' . $this->order->id . ' Completed - Smart Top-Up',
+            subject: '✅ Order #' . $this->order->id . ' Completed - Payless Data',
         );
     }
 

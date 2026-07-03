@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Order;
+use App\Services\IDataService;
 use App\Services\TransactionService;
 
 class PurchaseController extends Controller
@@ -42,7 +43,7 @@ class PurchaseController extends Controller
                 ? ($product->price ?? $product->customer_price)
                 : ($product->customer_price ?? $product->price));
 
-        $localReference = 'SMARTTOPUP_' . strtoupper(Str::random(10));
+        $localReference = 'PAYLESSDATA_' . strtoupper(Str::random(10));
 
         if ($buyer->role !== 'admin' && $payer->wallet_balance < $sellPrice) {
             return response()->json(['status' => false, 'message' => 'Insufficient wallet balance.'], 400);
@@ -54,21 +55,11 @@ class PurchaseController extends Controller
                     $payer->decrement('wallet_balance', $sellPrice);
                 }
 
-                //  Call DATAMART directly (admin flow bypasses Paystack)
-                $res = Http::withHeaders([
-                    'X-API-Key'    => config('services.datamart.key'),
-                    'X-API-Secret' => config('services.datamart.secret'),
-                    'Content-Type' => 'application/json',
-                ])->post(config('services.datamart.base') . '/v1/purchase', [
-                    'capacity'           => $product->capacity,
-                    'product_name'       => $product->name,
-                    'beneficiary_number' => $validated['customer_phone'],
-                    'reference'          => $localReference,
-                ]);
+                    $idataService = app(IDataService::class);
+                    $res = $idataService->placeProductOrder($product, $validated['customer_phone']);
 
                 $vendorResponse = $res->json();
-                $vendorData = $vendorResponse['data'] ?? [];
-                $status = $vendorData['status'] ?? 'pending';
+                    $status = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
 
                 $order = Order::create([
                     'user_id'         => $buyer->id,
@@ -96,10 +87,10 @@ class PurchaseController extends Controller
                     ['vendor_ref' => $localReference, 'order_id' => $order->id]
                 );
 
-                if (!$res->successful() || !($vendorResponse['success'] ?? false)) {
+                    if (!$res->successful() || !in_array(($vendorResponse['status'] ?? ''), ['success', 'completed'], true)) {
                     if ($buyer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
-                    return response()->json(['status' => false, 'message' => 'Vendor purchase failed.'], 500);
+                        return response()->json(['status' => false, 'message' => 'iDATA purchase failed.'], 500);
                 }
 
                 return response()->json([
@@ -117,7 +108,7 @@ class PurchaseController extends Controller
 
     /**
      *  SINGLE PURCHASE (Universal entry point)
-     * Decides whether to call Paystack or Datamart directly.
+    * Decides whether to call Paystack or iDATA directly.
      */
     public function purchaseSingle(Request $request)
     {
@@ -136,7 +127,7 @@ class PurchaseController extends Controller
         $product = Product::findOrFail($validated['product_id']);
         $agent = isset($validated['agent_id']) ? User::find($validated['agent_id']) : null;
 
-        $localReference = 'SMARTTOPUP_' . strtoupper(Str::random(10));
+        $localReference = 'PAYLESSDATA_' . strtoupper(Str::random(10));
 
         // 🧍 If visitor is NOT logged in (public buyer)
         if (!$buyer) {
@@ -174,32 +165,25 @@ class PurchaseController extends Controller
             return response()->json(['success' => false, 'message' => 'Insufficient wallet balance'], 400);
         }
 
-        // Agent or admin direct Datamart purchase
-        return $this->executeDatamartPurchase($buyer, $payer, $product, $validated, $agent, $sellPrice, $localReference);
+        // Agent or admin direct iDATA purchase
+            return $this->executeIDataPurchase($buyer, $payer, $product, $validated, $agent, $sellPrice, $localReference);
     }
 
 
     /**
-     *  Executes the Datamart API call and records everything.
+    *  Executes the iDATA API call and records everything.
      */
-    protected function executeDatamartPurchase($buyer, $payer, $product, $validated, $agent, $sellPrice, $localReference)
+    protected function executeIDataPurchase($buyer, $payer, $product, $validated, $agent, $sellPrice, $localReference)
     {
         try {
             return DB::transaction(function () use ($buyer, $payer, $product, $validated, $agent, $sellPrice, $localReference) {
                 if ($buyer->role !== 'admin') $payer->decrement('wallet_balance', $sellPrice);
 
-                $res = Http::withHeaders([
-                    'X-API-Key'    => config('services.datamart.key'),
-                    'X-API-Secret' => config('services.datamart.secret'),
-                ])->post(config('services.datamart.base') . '/v1/purchase', [
-                    'capacity'           => $product->capacity,
-                    'product_name'       => $product->name,
-                    'recipient_number' => $validated['recipient_number'],
-                    'reference'          => $localReference,
-                ]);
+                    $idataService = app(IDataService::class);
+                    $res = $idataService->placeProductOrder($product, $validated['recipient_number']);
 
                 $vendorResponse = $res->json();
-                $status = $vendorResponse['data']['status'] ?? 'pending';
+                    $status = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
 
                 $order = Order::create([
                     'user_id' => $buyer->id,
@@ -219,10 +203,10 @@ class PurchaseController extends Controller
                     'vendor_ref' => $localReference,
                 ]);
 
-                if (!$res->successful() || !($vendorResponse['success'] ?? false)) {
+                    if (!$res->successful() || !in_array(($vendorResponse['status'] ?? ''), ['success', 'completed'], true)) {
                     if ($buyer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
-                    return response()->json(['success' => false, 'message' => 'Vendor failed.'], 500);
+                        return response()->json(['success' => false, 'message' => 'iDATA failed.'], 500);
                 }
 
                 return response()->json([
@@ -233,8 +217,8 @@ class PurchaseController extends Controller
                 ]);
             });
         } catch (\Throwable $e) {
-            Log::error('Datamart Purchase Error', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Server error'], 500);
+            Log::error('iDATA Purchase Error', ['error' => $e->getMessage()]);
+                return response()->json(['success' => false, 'message' => 'Server error'], 500);
         }
     }
 
@@ -244,10 +228,18 @@ class PurchaseController extends Controller
     public function checkStatus($reference)
     {
         try {
-            $res = Http::withHeaders([
-                'X-API-Key'    => config('services.datamart.key'),
-                'X-API-Secret' => config('services.datamart.secret'),
-            ])->get(config('services.datamart.base') . '/v1/transactions/' . $reference);
+                $order = Order::where('reference', $reference)->first();
+                $orderId = $order ? data_get($order->vendor_response, 'order_id') : null;
+
+                if (!$orderId) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Local order found, but no iDATA order id is available yet.',
+                        'order' => $order,
+                    ]);
+                }
+
+                $res = app(IDataService::class)->orderStatus($orderId);
 
             return response()->json($res->json(), $res->status());
         } catch (\Throwable $e) {

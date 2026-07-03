@@ -12,7 +12,7 @@ interface Notification {
     created_at: string;
 }
 
-const AGENT_SUPPORT_EMAIL = "admin@smarttopup.net";
+const AGENT_SUPPORT_EMAIL = "admin@paylessdata.net";
 
 // --- MAIN COMPONENT ---
 const SupportCenter: React.FC = () => {

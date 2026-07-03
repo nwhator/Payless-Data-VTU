@@ -33,12 +33,12 @@ export default function ProductCard({
 
   // Only apply hover effects if NOT in display mode
   const hoverEffect = isDisplayMode
-    ? {}
+    ? undefined
     : {
         initial: { scale: 1, boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)" },
         hover: {
           scale: 1.05,
-          boxShadow: "0 10px 30px rgba(255, 204, 0, 0, 0.5)",
+          boxShadow: "0 10px 30px rgba(255, 204, 0, 0.5)",
           transition: { duration: 0.3 },
         },
         tap: { scale: 0.98 },
@@ -55,9 +55,9 @@ export default function ProductCard({
       key={product.product_code ?? product.name}
       onClick={() => !isDisplayMode && onBuy(product)}
       variants={hoverEffect}
-      whileHover={!isDisplayMode ? "hover" : ""}
-      whileTap={!isDisplayMode ? "tap" : ""}
-      initial="initial"
+      whileHover={!isDisplayMode ? "hover" : undefined}
+      whileTap={!isDisplayMode ? "tap" : undefined}
+      initial={!isDisplayMode ? "initial" : undefined}
       className={cardClasses}
       style={{
         backgroundColor: CARD_BACKGROUND,

@@ -17,7 +17,7 @@ export default function Hero({ userExists }: Props) {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight">
             Powering <span className={brandText}>instant</span> airtime & data — everywhere in Ghana.
           </h1>
-          <p className="mt-4 text-slate-300 max-w-xl mx-auto lg:mx-0">SmartTopUp makes buying airtime and data effortless. Fund your wallet via Paystack, top up phones instantly, or register as an agent to resell and earn commissions.</p>
+          <p className="mt-4 text-slate-300 max-w-xl mx-auto lg:mx-0">Payless Data makes buying airtime and data effortless. Fund your wallet via Paystack, top up phones instantly, or register as an agent to resell and earn commissions.</p>
 
           <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3">
             <button onClick={() => void (window.location.href = userExists ? "/dashboard/customer" : "#popular")} className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold shadow-lg" style={{ background: "linear-gradient(90deg,#00C4FF,#4DFF8F)", color: "#00121A" }}>
@@ -31,7 +31,7 @@ export default function Hero({ userExists }: Props) {
         <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7 }} className="relative mt-10 lg:mt-0">
           <div className="w-full max-w-sm sm:max-w-md mx-auto relative">
             <div aria-hidden className="absolute -inset-12 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle at 10% 20%, rgba(0,196,255,0.10), transparent), radial-gradient(circle at 90% 80%, rgba(77,255,143,0.07), transparent)" }} />
-            <img src="/assets/images/vtu-hero.svg" alt="SmartTopUp illustration" className="relative z-10 w-full drop-shadow-[0_20px_60px_rgba(56,189,248,0.14)]" loading="eager" />
+            <img src="/assets/images/vtu-hero.svg" alt="Payless Data illustration" className="relative z-10 w-full drop-shadow-[0_20px_60px_rgba(56,189,248,0.14)]" loading="eager" />
           </div>
         </motion.div>
       </div>

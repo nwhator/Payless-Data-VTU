@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Http\RedirectResponse;
 use App\Services\PaystackFeeService;
+use App\Services\IDataService;
 
 class PaystackController extends Controller
 {
@@ -80,7 +81,7 @@ class PaystackController extends Controller
             $validated['email'] // customer's email
         );
     
-        $purchaseCallbackUrl = "https://smarttopup.net/paystack/callback";
+        $purchaseCallbackUrl = "https://paylessdata.net/paystack/callback";
     
         try {
             // Initialize Paystack with TOTAL amount (including fee)
@@ -261,21 +262,11 @@ class PaystackController extends Controller
                     'user_agent'        => $request->userAgent(),
                 ]);
 
-                // -------- Call Vendor API (Datamart)
-                // Using the hardcoded URL structure you provided for the vendor
-                $res = Http::withHeaders([
-                    'X-API-Key'     => config('services.datamart.key'),
-                    'X-API-Secret'  => config('services.datamart.secret'),
-                    'Content-Type'  => 'application/json',
-                ])->post('https://server-datamart-reseller.onrender.com/api/v1/purchase', [
-                    'capacity'           => $product->capacity,
-                    'product_name'       => $product->name,
-                    'beneficiary_number' => $meta['recipient_number'] ?? null,
-                    'reference'          => $reference,
-                ]);
+                // -------- Call Vendor API (iDATA)
+                $res = app(IDataService::class)->placeProductOrder($product, $meta['recipient_number'] ?? null);
 
                 $vendorResponse = $res->json();
-                $vendorStatus   = $vendorResponse['data']['status'] ?? 'pending';
+                $vendorStatus   = app(IDataService::class)->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
 
                 // -------- Update Order
                 $order->update([
@@ -283,7 +274,7 @@ class PaystackController extends Controller
                     'vendor_response' => $vendorResponse,
                 ]);
 
-                Log::info('Datamart purchase successful', [
+                Log::info('iDATA purchase successful', [
                     'order_id'        => $order->id,
                     'reference'       => $reference,
                     'vendor_response' => $vendorResponse,
@@ -297,7 +288,7 @@ class PaystackController extends Controller
 
             } catch (\Throwable $e) {
 
-                Log::error('Datamart purchase failed during fulfillment', [
+                Log::error('iDATA purchase failed during fulfillment', [
                     'reference' => $reference,
                     'error'     => $e->getMessage(),
                 ]);
@@ -450,7 +441,7 @@ class PaystackController extends Controller
             $validated['email']
         );
     
-        $purchaseCallbackUrl = "https://smarttopup.net/paystack/main-callback";
+        $purchaseCallbackUrl = "https://paylessdata.net/paystack/main-callback";
     
         try {
             // Initialize Paystack with TOTAL amount (including fee)
@@ -579,7 +570,7 @@ class PaystackController extends Controller
                     ->with('user_id', $userId);
     
             } catch (\Throwable $e) {
-                Log::error('Datamart purchase failed during direct fulfillment', [
+                Log::error('iDATA purchase failed during direct fulfillment', [
                     'reference' => $reference,
                     'error' => $e->getMessage(),
                 ]);
@@ -600,7 +591,7 @@ class PaystackController extends Controller
     }
 
     /**
-     * Reusable logic to create the order and call the Datamart Vendor API.
+    * Reusable logic to create the order and call the iDATA Vendor API.
      * * @param Transaction $transaction
      * @param User $customer
      * @param Product $product
@@ -644,23 +635,14 @@ class PaystackController extends Controller
             'user_agent'        => $userAgent,
         ]);
     
-        // 2. Call Datamart Vendor API
-        $res = Http::withHeaders([
-            'X-API-Key'     => config('services.datamart.key'),
-            'X-API-Secret'  => config('services.datamart.secret'),
-            'Content-Type'  => 'application/json',
-        ])->post('https://server-datamart-reseller.onrender.com/api/v1/purchase', [
-            'capacity'            => $product->capacity,
-            'product_name'        => $product->name,
-            'beneficiary_number'  => $recipientNumber, // FIXED: was using undefined $meta
-            'reference'           => $reference,
-        ]);
+        // 2. Call iDATA Vendor API
+        $res = app(IDataService::class)->placeProductOrder($product, $recipientNumber);
     
         $vendorResponse = $res->json();
         
         // CORRECT: Check success at the root level, not nested under 'data'
         $vendorSuccess = $vendorResponse['success'] ?? false;
-        $finalStatus = $vendorResponse['data']['status'] ?? 'failed';
+        $finalStatus = app(IDataService::class)->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
     
         // 3. Handle success vs failure
         if ($vendorSuccess === true) {

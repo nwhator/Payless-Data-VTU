@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { Slot } from "@radix-ui/react-slot";
 
 type SidebarContextType = {
   open: boolean;
+  state: "expanded" | "collapsed";
   setOpen: (value: boolean) => void;
   toggleSidebar: () => void;
 };
 
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(true);
+export function SidebarProvider({ children, defaultOpen = true }: { children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
 
   const toggleSidebar = useCallback(() => setOpen((prev) => !prev), []);
 
@@ -21,7 +23,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, toggleSidebar }}>
+    <SidebarContext.Provider value={{ open, state: open ? "expanded" : "collapsed", setOpen, toggleSidebar }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -68,7 +70,7 @@ export function SidebarInset({ children, className = "" }: { children: React.Rea
   return <div className={`p-4 w-full ${className}`}>{children}</div>;
 }
 
-export function SidebarGroup({ children, className = "", ...props }: any) {
+export function SidebarGroup({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={`flex flex-col gap-1 p-2 ${className}`} {...props}>
       {children}
@@ -76,7 +78,7 @@ export function SidebarGroup({ children, className = "", ...props }: any) {
   );
 }
 
-export function SidebarGroupContent({ children, className = "", ...props }: any) {
+export function SidebarGroupContent({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={`flex flex-col ${className}`} {...props}>
       {children}
@@ -84,7 +86,7 @@ export function SidebarGroupContent({ children, className = "", ...props }: any)
   );
 }
 
-export function SidebarGroupLabel({ children, className = "", ...props }: any) {
+export function SidebarGroupLabel({ children, className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={`text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 px-2 mb-1 ${className}`}
@@ -99,18 +101,28 @@ export function SidebarMenuButton({
   children,
   onClick,
   className = "",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
+  asChild = false,
+  size,
+  isActive,
+  tooltip,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  asChild?: boolean;
+  size?: string;
+  isActive?: boolean;
+  tooltip?: unknown;
 }) {
+  const Comp = asChild ? Slot : "button";
   return (
-    <button
+    <Comp
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition text-left ${className}`}
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition text-left ${isActive ? "bg-white/10" : ""} ${className}`}
+      data-size={size}
+      data-tooltip={tooltip ? "true" : undefined}
+      {...props}
     >
       {children}
-    </button>
+    </Comp>
   );
 }
 
