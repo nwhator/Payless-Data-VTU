@@ -50,7 +50,7 @@ export default function UpgradeToAgentForm({
     setLoading(true);
     
     try {
-      const response = await axios.post("/paystack/customer/upgrade/initialize", {
+      const response = await axios.post("/customer/upgrade/initialize", {
         user_id: userId,
         email: userEmail,
         amount: upgradeFee,
