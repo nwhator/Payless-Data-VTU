@@ -6,10 +6,13 @@ import React from 'react';
    PROPS INTERFACE
 ------------------------------------ */
 interface Order {
-  id: number;
+  id: string;
+  reference: string;
+  source: string;
   bundle: string; // e.g., "MTN 2GB"
   recipient: string; // e.g., "054xxxxxxx"
   amount: string; // e.g., "GHS 12.50"
+  paymentStatus: string;
   status: string; // e.g., "SUCCESS"
   statusColor: string; // e.g., "text-green-400"
   date: string; // e.g., "Nov 14, 2025"
@@ -63,7 +66,7 @@ const CustomerPurchases: React.FC<CustomerPurchasesProps> = ({ loading, orders }
             {/* Secondary Details: Recipient and Status */}
             <div className="flex justify-between items-center text-sm">
                 <div className="text-gray-400">
-                    Recipient: **{order.recipient}**
+                    Recipient: <span className="font-semibold text-gray-200">{order.recipient}</span>
                 </div>
                 <div className={`font-semibold ${order.statusColor}`}>
                     {order.status}
@@ -72,7 +75,7 @@ const CustomerPurchases: React.FC<CustomerPurchasesProps> = ({ loading, orders }
 
             {/* Tertiary Details: Date and Time */}
             <div className="flex justify-between items-center text-xs mt-2 border-t border-gray-800 pt-2">
-                <span className="text-gray-500">Order ID: {order.id}</span>
+                <span className="text-gray-500">Ref: {order.reference || order.id}</span>
                 <span className="text-gray-500">
                     {order.date} at {order.time}
                 </span>

@@ -73,8 +73,13 @@ class WallettController extends Controller
             $wallet->balance = $newBalance;
             $wallet->save();
 
-            // Optional: Create a Transaction record here
-            // $wallet->transactions()->create([...]);
+            WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'admin_id' => Auth::id(),
+                'type' => $action === 'fund' ? 'credit' : 'debit',
+                'amount' => $amount,
+                'reason' => $message,
+            ]);
 
             // 5. Success Response
             return response()->json([
@@ -84,4 +89,3 @@ class WallettController extends Controller
         });
     }
 }
-

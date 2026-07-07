@@ -375,9 +375,9 @@ class PaystackController extends Controller
                     $owner, 
                     $product, 
                     $validated['recipient_number'],
+					$walletService,
                     $request->ip(),
-                    $request->userAgent(),
-                    $walletService
+                    $request->userAgent()
                 );
     
                 return response()->json([
@@ -553,7 +553,7 @@ class PaystackController extends Controller
             try {
                 if ($product && $customer && $recipientNumber) {
                     // 4. Call the reusable fulfillment method
-                    $order = $this->fulfillOrder($transaction, $customer, $product, $recipientNumber, $request->ip(), $request->userAgent(), $walletService);
+                    $order = $this->fulfillOrder($transaction, $customer, $product, $recipientNumber, $walletService, $request->ip(), $request->userAgent());
     
                     // Success Redirect to PERSONALIZED page
                     return redirect()
@@ -606,9 +606,9 @@ class PaystackController extends Controller
         User $customer, 
         Product $product, 
         string $recipientNumber,
+		WalletService $walletService, // ADDED THIS PARAMETER
         ?string $ipAddress = null,
-        ?string $userAgent = null,
-        WalletService $walletService // ADDED THIS PARAMETER
+        ?string $userAgent = null   
     ): Order
     {
         // Determine the reference based on source
@@ -681,9 +681,9 @@ class PaystackController extends Controller
                         $amount,
                         "Refund for failed order #{$order->id} - {$product->name}",
                         'refund',
-                        $product->id,
                         [
                             'order_id' => $order->id,
+						'product_id' => $product->id,
                             'original_reference' => $reference,
                             'reason' => 'vendor_api_failure',
                         ]

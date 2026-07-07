@@ -383,7 +383,7 @@ class AgentPurchaseController extends Controller
         string $beneficiaryNumber,
         ?string $ipAddress = null,
         ?string $userAgent = null,
-        $walletService // Passed in the calling method, but not used here
+		$walletService = null // Passed in the calling method, but not used here
     ): Order {
         // Determine the reference based on source (wallet uses internal ref, paystack uses paystack_ref)
         $reference = $transaction->paystack_ref ?? $transaction->reference;

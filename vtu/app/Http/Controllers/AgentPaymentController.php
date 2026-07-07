@@ -12,6 +12,7 @@ use App\Services\PaystackService;
 use App\Services\TransactionService;
 use App\Models\Transaction;
 use App\Services\PaystackFeeService;
+use Illuminate\Support\Str;
 
 // NOTE: Set the base URL for redirects to work with your frontend handler
 const DASHBOARD_URL = '/dashboard/upgrade'; 
@@ -63,7 +64,8 @@ class AgentPaymentController extends Controller
     try {
         $agentUpgrade = AgentUpgrade::create([
             'user_id' => $customer->id,
-            'status' => 'pending', 
+            'payment_reference' => 'pending-upgrade-' . $customer->id . '-' . Str::uuid(),
+            'status' => 'awaiting_payment',
         ]);
     } catch (\Throwable $e) {
         Log::error('Failed to create AgentUpgrade record.', [
@@ -79,12 +81,13 @@ class AgentPaymentController extends Controller
     // 2. Create local transaction record with fee information
     $transaction = TransactionService::record(
         $customer, 
-        'upgrade',
+        'credit',
         $amountCedis, // Original amount
         "Agent account upgrade fee",
         null,
         [
             'is_agent_upgrade'  => true,
+            'transaction_category' => 'agent_upgrade',
             'target_role'       => 'agent',
             'user_id'           => $customer->id,
             'agent_upgrade_id'  => $agentUpgrade->id,
@@ -151,6 +154,22 @@ class AgentPaymentController extends Controller
 
     // 4. Update transaction and AgentUpgrade with Paystack reference
     $paystackRef = $paystackResponse['data']['reference'] ?? null;
+
+    if (!$paystackRef) {
+        Log::error('Paystack Agent upgrade initialize response missing reference', [
+            'transaction_id' => $transaction->id,
+            'response' => $paystackResponse,
+        ]);
+
+        TransactionService::update($transaction, ['status' => 'failed']);
+        $agentUpgrade->status = 'declined';
+        $agentUpgrade->save();
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Payment initialization failed. Please try again.',
+        ], 500);
+    }
     
     TransactionService::update($transaction, [
         'paystack_ref' => $paystackRef,
@@ -263,22 +282,18 @@ class AgentPaymentController extends Controller
              $message = urlencode('Your Agent upgrade was successful, and your account is already active!');
              return redirect(DASHBOARD_URL . "?status=success&message={$message}");
         }
+
+        if ($agentUpgrade->status === 'pending') {
+             $message = urlencode('Your payment has been verified and is awaiting admin approval.');
+             return redirect(DASHBOARD_URL . "?status=success&message={$message}");
+        }
         
         // 3. Process based on Paystack Status
         if ($status === 'success') {
             try {
                 // Ensure atomic operation using a database transaction
                 DB::transaction(function () use ($transaction, $verification, $agentUpgrade) {
-                    // Use refresh to ensure we have the latest data inside the transaction
-                    $user = $transaction->user->refresh(); 
-
-                    // A. Update User Role (The actual upgrade)
-                    if ($user && $user->role !== 'agent') {
-                        $user->role = 'agent';
-                        $user->save();
-                    }
-
-                    // B. Finalize Transaction Record
+                    // Payment is verified, but admin must still approve the role change.
                     TransactionService::update($transaction, [
                         'status'          => 'completed',
                         'paystack_data'   => json_encode($verification),
@@ -286,13 +301,12 @@ class AgentPaymentController extends Controller
                         'completed_at'    => now(),
                     ]);
                     
-                    // C. Update AgentUpgrade Status
-                    $agentUpgrade->status = 'approved';
+                    $agentUpgrade->status = 'pending';
                     $agentUpgrade->save();
                 });
 
                 // Success redirect with query parameters
-                $message = urlencode('Congratulations! Your account has been successfully upgraded to an Agent!');
+                $message = urlencode('Payment verified successfully. Your Agent upgrade is now awaiting admin approval.');
                 return redirect(DASHBOARD_URL . "?status=success&message={$message}");
 
             } catch (\Throwable $e) {

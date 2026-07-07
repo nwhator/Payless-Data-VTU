@@ -239,14 +239,9 @@ class AgentController extends Controller
     // 1. Get the current agent's ID
     $agentId = Auth::id();
 
-    // 2. TEMPORARY BASE QUERY: Filter by agent_id AND strictly enforce the vendor_response success flag.
+    // 2. Base query: show all agent orders so pending, failed, and successful rows are visible.
     $query = Order::query()
         ->where('agent_id', $agentId)
-        
-        // Only include orders where the vendor has reported a successful transaction.
-        // This is the condition that was causing the perceived filtering in your previous tests.
-        ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(vendor_response, '$.success'))"), 'true')
-        
         ->orderBy('created_at', 'desc');
 
     // 3. Apply Pagination
