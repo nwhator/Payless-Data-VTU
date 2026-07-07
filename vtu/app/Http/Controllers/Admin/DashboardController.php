@@ -222,7 +222,7 @@ class DashboardController extends Controller
         $pendingUpgrades = AgentUpgrade::where('status', 'pending')->count();
         
         // 2. Fetch Financial Metrics
-        $totalSales = Transaction::where('status', 'successful')->count();
+        $totalSales = Transaction::whereIn('status', ['successful', 'success', 'completed'])->count();
 
         // ---------------------------------------------------------------
         // 3. CORRECTED ADMIN NET PROFIT CALCULATION
@@ -231,9 +231,7 @@ class DashboardController extends Controller
         // ---------------------------------------------------------------
         
         $successfulStoreSalesQuery = Order::query()
-            ->where('payment_status', 'success')
-            // FIX 1: Rely only on the JSON success flag from the vendor response, as per the user's request/log.
-            ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(vendor_response, '$.success'))"), 'true');
+            ->whereIn('payment_status', ['success', 'successful', 'paid']);
         $totalSalesCount = $successfulStoreSalesQuery->count();
 
         $financials = Commission::query()
@@ -305,12 +303,8 @@ class DashboardController extends Controller
             ->with('user') // Eager load the User model to get 'agent_name'
             ->latest();    // Order by created_at desc
 
-        // --- YOUR SPECIFIC FILTER LOGIC ---
-        // Note: This logic forces the table to ONLY show successful orders.
-        // If you want the table to show Pending/Failed orders as well, 
-        // you should comment out these two 'where' clauses.
-        $query->where('payment_status', 'success')
-              ->where(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(vendor_response, '$.success'))"), 'true');
+        // Only show orders after payment is confirmed. Fulfillment may still need admin review.
+        $query->whereIn('payment_status', ['success', 'successful', 'paid']);
         // ----------------------------------
 
         // Limit results to prevent browser crash on massive datasets since we are doing client-side search
@@ -344,6 +338,116 @@ class DashboardController extends Controller
     }
 
     /**
+     * Fetch all admin-visible transaction activity.
+     * Includes order-backed purchases plus standalone payment/wallet records that
+     * may still be pending or failed before an order exists.
+     */
+    public function transactions()
+    {
+        $orders = Order::query()
+            ->with(['user', 'agent'])
+            ->latest()
+            ->limit(1000)
+            ->get();
+
+        $orderTransactionIds = $orders
+            ->pluck('transaction_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $transactionsQuery = Transaction::query()
+            ->with(['user', 'product'])
+            ->latest()
+            ->limit(1000);
+
+        if ($orderTransactionIds->isNotEmpty()) {
+            $transactionsQuery->whereNotIn('id', $orderTransactionIds);
+        }
+
+        $transactionRows = $transactionsQuery->get()->map(function ($transaction) {
+            $meta = $transaction->meta ?? [];
+            $reference = $transaction->paystack_ref ?? $transaction->reference;
+            $productName = $transaction->product?->name ?? ($meta['product_name'] ?? $transaction->description ?? 'Transaction');
+            $recipient = $meta['recipient_number'] ?? $meta['beneficiary_number'] ?? $meta['customer_phone'] ?? 'N/A';
+
+            return [
+                'id'             => 'txn-' . $transaction->id,
+                'order_id'       => null,
+                'transaction_id' => $transaction->id,
+                'source'         => 'transaction',
+                'reference'      => $reference,
+                'user_name'      => $transaction->user?->name ?? $transaction->email ?? 'Guest / System',
+                'email'          => $transaction->email ?? $transaction->user?->email,
+                'created_at'     => $transaction->created_at?->toIso8601String(),
+                'network'        => $productName,
+                'recipient'      => $recipient,
+                'data_volume'    => $transaction->product?->capacity ?? 'N/A',
+                'amount'         => (float) $transaction->amount,
+                'currency'       => $transaction->currency ?? 'GHS',
+                'payment_status' => $this->normalizePaymentStatus($transaction->status),
+                'status'         => $this->normalizeTransactionStatus($transaction->status),
+                'type'           => $transaction->type,
+                'description'    => $transaction->description,
+            ];
+        });
+
+        $orderRows = $orders->map(function ($order) {
+            return [
+                'id'             => 'order-' . $order->id,
+                'order_id'       => $order->id,
+                'transaction_id' => $order->transaction_id,
+                'source'         => 'order',
+                'reference'      => $order->reference ?? $order->payment_reference,
+                'user_name'      => $order->agent?->name ?? $order->user?->name ?? 'Guest / System',
+                'email'          => $order->user?->email,
+                'created_at'     => $order->created_at?->toIso8601String(),
+                'network'        => $order->network,
+                'recipient'      => $order->recipient,
+                'data_volume'    => $order->data_volume,
+                'amount'         => (float) $order->amount,
+                'currency'       => $order->currency ?? 'GHS',
+                'payment_status' => $this->normalizePaymentStatus($order->payment_status),
+                'status'         => $this->normalizeTransactionStatus($order->status),
+                'type'           => 'purchase',
+                'description'    => $order->order_source,
+            ];
+        });
+
+        $rows = $orderRows
+            ->concat($transactionRows)
+            ->sortByDesc('created_at')
+            ->values();
+
+        return response()->json([
+            'transactions' => $rows,
+        ]);
+    }
+
+    private function normalizePaymentStatus(?string $status): string
+    {
+        $status = strtolower((string) $status);
+
+        return match ($status) {
+            'success', 'successful', 'completed', 'paid' => 'success',
+            'failed', 'error', 'declined', 'abandoned', 'reversed' => 'failed',
+            default => 'pending',
+        };
+    }
+
+    private function normalizeTransactionStatus(?string $status): string
+    {
+        $status = strtolower((string) $status);
+
+        return match ($status) {
+            'success', 'successful', 'completed', 'paid' => 'completed',
+            'failed', 'error', 'declined', 'abandoned', 'reversed' => 'failed',
+            'processing' => 'processing',
+            default => 'pending',
+        };
+    }
+
+    /**
      * Update Order Status (for the "Mark as Completed" button)
      * Route: PUT /admin/orders/{id}/status
      */
@@ -358,4 +462,3 @@ class DashboardController extends Controller
         return response()->json(['message' => 'Order updated successfully']);
     }
 }
-

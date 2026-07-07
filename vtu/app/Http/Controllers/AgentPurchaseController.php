@@ -381,9 +381,9 @@ class AgentPurchaseController extends Controller
         $agent, // Type-hint as User
         $product, // Type-hint as Product
         string $beneficiaryNumber,
-		$walletService, // Passed in the calling method, but not used here
         ?string $ipAddress = null,
-        ?string $userAgent = null
+        ?string $userAgent = null,
+		$walletService = null // Passed in the calling method, but not used here
     ): Order {
         // Determine the reference based on source (wallet uses internal ref, paystack uses paystack_ref)
         $reference = $transaction->paystack_ref ?? $transaction->reference;

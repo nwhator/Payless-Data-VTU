@@ -553,7 +553,7 @@ class PaystackController extends Controller
             try {
                 if ($product && $customer && $recipientNumber) {
                     // 4. Call the reusable fulfillment method
-                    $order = $this->fulfillOrder($transaction, $customer, $product, $recipientNumber, $request->ip(), $request->userAgent(), $walletService);
+                    $order = $this->fulfillOrder($transaction, $customer, $product, $recipientNumber, $walletService, $request->ip(), $request->userAgent());
     
                     // Success Redirect to PERSONALIZED page
                     return redirect()

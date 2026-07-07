@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Wallet;
 use App\Models\Order;
+use App\Models\Transaction;
 use Inertia\Inertia;
 use App\Models\Product;
 use Illuminate\Validation\Rule;
@@ -210,34 +211,95 @@ class UserController extends Controller
         $user = Auth::user();
 
         $orders = $user->orders()
-            // Select only the essential columns for the customer view
-            ->select('id', 'network', 'recipient', 'data_volume', 'amount', 'currency', 'status', 'created_at')
             ->latest()
-            ->get()
-            ->map(function ($order) {
-                // Determine the price format
+            ->get();
+
+        $orderTransactionIds = $orders
+            ->pluck('transaction_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $transactionsQuery = $user->transactions()
+            ->with('product')
+            ->latest();
+
+        if ($orderTransactionIds->isNotEmpty()) {
+            $transactionsQuery->whereNotIn('id', $orderTransactionIds);
+        }
+
+        $orderRows = $orders->map(function ($order) {
                 $fullAmount = ($order->currency ?? 'GHS') . ' ' . number_format($order->amount, 2);
-                
-                // Determine the display color based on status
-                $statusColor = match ($order->status) {
-                    'SUCCESS' => 'text-green-400',
-                    'FAILED' => 'text-red-400',
-                    default => 'text-yellow-400', // PENDING or others
-                };
+                $status = $this->displayStatus($order->status);
 
                 return [
-                    'id' => $order->id,
-                    'bundle' => "{$order->network} {$order->data_volume}", // Combine network and volume for display
-                    'recipient' => $order->recipient,
+                    'id' => 'order-' . $order->id,
+                    'reference' => $order->reference ?? $order->payment_reference,
+                    'source' => 'order',
+                    'bundle' => "{$order->network} {$order->data_volume}",
+                    'recipient' => $order->recipient ?? 'N/A',
                     'amount' => $fullAmount,
-                    'status' => $order->status,
-                    'statusColor' => $statusColor, // Pass color for styling
-                    'date' => $order->created_at->format('M d, Y'), // Friendly date format
-                    'time' => $order->created_at->format('h:i A'), // Time
+                    'paymentStatus' => $this->displayStatus($order->payment_status),
+                    'status' => $status,
+                    'statusColor' => $this->statusColor($status),
+                    'date' => $order->created_at->format('M d, Y'),
+                    'time' => $order->created_at->format('h:i A'),
+                    'created_at' => $order->created_at->toIso8601String(),
                 ];
             });
 
+        $transactionRows = $transactionsQuery->get()->map(function ($transaction) {
+            $meta = $transaction->meta ?? [];
+            $recipient = $meta['recipient_number'] ?? $meta['beneficiary_number'] ?? 'N/A';
+            $productName = $transaction->product?->name ?? $transaction->description ?? ucfirst($transaction->type);
+            $dataVolume = $transaction->product?->capacity ?? '';
+            $status = $this->displayStatus($transaction->status);
+            $reference = $transaction->paystack_ref ?? $transaction->reference;
+
+            return [
+                'id' => 'txn-' . $transaction->id,
+                'reference' => $reference,
+                'source' => 'transaction',
+                'bundle' => trim("{$productName} {$dataVolume}"),
+                'recipient' => $recipient,
+                'amount' => ($transaction->currency ?? 'GHS') . ' ' . number_format((float) $transaction->amount, 2),
+                'paymentStatus' => $status,
+                'status' => $status,
+                'statusColor' => $this->statusColor($status),
+                'date' => $transaction->created_at->format('M d, Y'),
+                'time' => $transaction->created_at->format('h:i A'),
+                'created_at' => $transaction->created_at->toIso8601String(),
+            ];
+        });
+
+        $orders = $orderRows
+            ->concat($transactionRows)
+            ->sortByDesc('created_at')
+            ->values();
+
         return response()->json(['orders' => $orders]);
+    }
+
+    private function displayStatus(?string $status): string
+    {
+        $status = strtolower((string) $status);
+
+        return match ($status) {
+            'success', 'successful', 'completed', 'paid' => 'Successful',
+            'failed', 'error', 'declined', 'abandoned', 'reversed' => 'Failed',
+            'processing' => 'Processing',
+            default => 'Pending',
+        };
+    }
+
+    private function statusColor(string $status): string
+    {
+        return match ($status) {
+            'Successful' => 'text-green-400',
+            'Failed' => 'text-red-400',
+            'Processing' => 'text-blue-400',
+            default => 'text-yellow-400',
+        };
     }
 
     public function updateProfile(Request $request): JsonResponse

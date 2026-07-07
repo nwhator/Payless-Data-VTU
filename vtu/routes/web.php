@@ -130,6 +130,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'getSummaryData'])->name('admin.summary');
 
     Route::get('/orders', [DashboardController::class, 'order'])->name('admin.orders');
+    Route::get('/transactions', [DashboardController::class, 'transactions'])->name('admin.transactions');
     Route::put('/orders/{id}/status', [DashboardController::class, 'updateStatus']);
 
     Route::get('/users', [UserController::class, 'indexAdmin']);

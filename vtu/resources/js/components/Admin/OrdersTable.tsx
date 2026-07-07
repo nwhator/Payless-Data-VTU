@@ -32,21 +32,24 @@ interface Order {
 
 // --- HELPER FUNCTIONS ---
 const getStatusBadge = (status: Order["status"]) => {
-  switch (status) {
-    case "Completed":
+  const normalizedStatus = status?.toLowerCase() ?? "";
+
+  switch (normalizedStatus) {
+    case "completed":
       return (
         <span className="px-2 py-0.5 text-xs font-medium bg-green-900/50 text-green-300 rounded-full flex items-center gap-1 w-fit">
           <CheckCircle size={12} /> Completed
         </span>
       );
-    case "Processing":
+    case "processing":
+    case "pending":
       return (
         <span className="px-2 py-0.5 text-xs font-medium bg-yellow-900/50 text-yellow-300 rounded-full flex items-center gap-1 w-fit">
           <Clock size={12} /> Processing
         </span>
       );
-    case "Failed":
-    case "Refunded":
+    case "failed":
+    case "refunded":
       return (
         <span className="px-2 py-0.5 text-xs font-medium bg-red-900/50 text-red-300 rounded-full flex items-center gap-1 w-fit">
           <XCircleIcon size={12} /> {status}
@@ -62,8 +65,10 @@ const getStatusBadge = (status: Order["status"]) => {
 };
 
 const getPaymentStatusIcon = (status: Order["payment_status"]) => {
-  if (status === "Paid" || status === "success") return <CheckCircle size={16} className="text-green-400" />;
-  if (status === "Pending") return <Clock size={16} className="text-yellow-400" />;
+  const normalizedStatus = status?.toLowerCase() ?? "";
+
+  if (["paid", "success", "successful"].includes(normalizedStatus)) return <CheckCircle size={16} className="text-green-400" />;
+  if (normalizedStatus === "pending") return <Clock size={16} className="text-yellow-400" />;
   return <XCircleIcon size={16} className="text-red-400" />;
 };
 
@@ -136,13 +141,13 @@ const OrdersTable: React.FC = () => {
     setProcessingId(orderId);
     try {
       // Adjust endpoint to your backend logic
-      await axios.put(`/admin/orders/${orderId}/status`, { status: "Completed" });
+      await axios.put(`/admin/orders/${orderId}/status`, { status: "completed" });
       
       toast.success("Order marked as completed!");
 
       // OPTIMISTIC UPDATE: Update local state immediately without refetching
       setAllOrders((prev) => 
-        prev.map((o) => o.id === orderId ? { ...o, status: "Completed" } : o)
+        prev.map((o) => o.id === orderId ? { ...o, status: "completed" } : o)
       );
 
     } catch (err) {
@@ -230,7 +235,7 @@ const OrdersTable: React.FC = () => {
                   <div className="pt-3 border-t border-slate-700 flex justify-between items-center">
                     <span className="text-xs text-slate-500">{formatDate(o.created_at)}</span>
                     <div className="flex gap-2">
-                       {o.status !== "Completed" && (
+                       {o.status?.toLowerCase() !== "completed" && (
                         <button 
                           onClick={() => markAsCompleted(o.id)}
                           disabled={!!processingId}
@@ -291,7 +296,7 @@ const OrdersTable: React.FC = () => {
                       </td>
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {o.status !== "Completed" && (
+                          {o.status?.toLowerCase() !== "completed" && (
                             <button
                               onClick={() => markAsCompleted(o.id)}
                               disabled={!!processingId}

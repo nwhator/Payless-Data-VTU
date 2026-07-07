@@ -10,6 +10,7 @@ import ProfileSettings from "@/components/Admin/ProfileSettings"
 import WithdrawalRequests from "@/components/Admin/WithdrawalRequests"
 import SendNotification from "@/components/Admin/SendNotification"
 import AdminPurchase from "@/components/Admin/AdminPurchase"
+import TransactionsTable from "@/components/Admin/TransactionsTable"
 
 import { toast } from "sonner"
 
@@ -104,8 +105,9 @@ const AdminDashboard: React.FC = () => {
 
           {active === "purchase" && <AdminPurchase />}
 
+          {active === "transactions" && <TransactionsTable />}
 
-          {["transactions", "api", "reports"].includes(active) && (
+          {["api", "reports"].includes(active) && (
             <div className="p-6 bg-white/5 border border-white/10 rounded-xl text-slate-400">
               Coming soon...
             </div>

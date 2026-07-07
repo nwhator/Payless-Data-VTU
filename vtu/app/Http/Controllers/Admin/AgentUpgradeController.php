@@ -8,12 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Models\Transaction;
 
 class AgentUpgradeController extends Controller
 {
     public function index()
     {
         $agentRequests = AgentUpgrade::with('user')
+            ->whereIn('status', ['pending', 'approved', 'declined'])
             ->latest()
             ->get();
 
@@ -33,6 +35,13 @@ class AgentUpgradeController extends Controller
                     'message' => 'Request is already processed.',
                     'new_status' => $upgrade->status
                 ], 400);
+            }
+
+            if (!$this->hasVerifiedPayment($upgrade)) {
+                return response()->json([
+                    'message' => 'Payment has not been verified for this upgrade request.',
+                    'new_status' => $upgrade->status
+                ], 422);
             }
 
             DB::transaction(function () use ($upgrade, $user) {
@@ -82,5 +91,16 @@ class AgentUpgradeController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function hasVerifiedPayment(AgentUpgrade $upgrade): bool
+    {
+        if (!$upgrade->payment_reference) {
+            return false;
+        }
+
+        return Transaction::where('paystack_ref', $upgrade->payment_reference)
+            ->whereIn('status', ['completed', 'success', 'successful'])
+            ->exists();
     }
 }

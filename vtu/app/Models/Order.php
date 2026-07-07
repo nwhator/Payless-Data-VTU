@@ -63,7 +63,7 @@ class Order extends Model
 
     public function scopeSuccessful($query)
     {
-        return $query->where('payment_status', 'successful');
+        return $query->whereIn('payment_status', ['success', 'successful', 'paid']);
     }
 
     public function scopeCompleted($query)

@@ -57,10 +57,13 @@ interface PageProps {
 
 // NEW ORDER TYPE (must match the structure returned by your backend getOrders API)
 interface Order {
-  id: number;
+  id: string;
+  reference: string;
+  source: string;
   bundle: string; // e.g., "MTN 2GB"
   recipient: string; // e.g., "054xxxxxxx"
   amount: string; // e.g., "GHS 12.50"
+  paymentStatus: string;
   status: string; // e.g., "SUCCESS"
   statusColor: string; // e.g., "text-green-400"
   date: string; // e.g., "Nov 14, 2025"
