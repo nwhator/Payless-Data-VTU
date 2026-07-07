@@ -7,7 +7,7 @@ interface TransactionRow {
   id: string
   order_id: number | null
   transaction_id: number | null
-  source: "order" | "transaction"
+  source: "order" | "transaction" | "wallet"
   reference: string | null
   user_name: string
   email?: string | null

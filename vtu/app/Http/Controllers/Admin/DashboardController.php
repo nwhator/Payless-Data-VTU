@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\AgentUpgrade;
 use App\Models\Transaction;
+use App\Models\WalletTransaction;
 use Inertia\Inertia;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
@@ -338,6 +339,23 @@ class DashboardController extends Controller
     }
 
     /**
+     * Fetch agents for admin-assisted purchases and notification selectors.
+     */
+    public function agents()
+    {
+        $agents = User::query()
+            ->select(['id', 'name', 'email'])
+            ->where('role', 'agent')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'agents' => $agents,
+        ]);
+    }
+
+    /**
      * Fetch all admin-visible transaction activity.
      * Includes order-backed purchases plus standalone payment/wallet records that
      * may still be pending or failed before an order exists.
@@ -392,6 +410,37 @@ class DashboardController extends Controller
             ];
         });
 
+        $walletRows = WalletTransaction::query()
+            ->with(['wallet.user', 'admin'])
+            ->latest()
+            ->limit(1000)
+            ->get()
+            ->map(function ($walletTransaction) {
+                $walletUser = $walletTransaction->wallet?->user;
+
+                return [
+                    'id'             => 'wallet-' . $walletTransaction->id,
+                    'order_id'       => null,
+                    'transaction_id' => null,
+                    'source'         => 'wallet',
+                    'reference'      => 'WALLET-' . $walletTransaction->id,
+                    'user_name'      => $walletUser?->name ?? 'Unknown wallet user',
+                    'email'          => $walletUser?->email,
+                    'created_at'     => $walletTransaction->created_at?->toIso8601String(),
+                    'network'        => 'Wallet adjustment',
+                    'recipient'      => $walletTransaction->admin?->name
+                        ? 'Admin: ' . $walletTransaction->admin->name
+                        : 'Admin adjustment',
+                    'data_volume'    => $walletTransaction->reason,
+                    'amount'         => (float) $walletTransaction->amount,
+                    'currency'       => $walletTransaction->wallet?->currency ?? 'GHS',
+                    'payment_status' => 'success',
+                    'status'         => 'completed',
+                    'type'           => $walletTransaction->type,
+                    'description'    => $walletTransaction->reason,
+                ];
+            });
+
         $orderRows = $orders->map(function ($order) {
             return [
                 'id'             => 'order-' . $order->id,
@@ -416,6 +465,7 @@ class DashboardController extends Controller
 
         $rows = $orderRows
             ->concat($transactionRows)
+            ->concat($walletRows)
             ->sortByDesc('created_at')
             ->values();
 

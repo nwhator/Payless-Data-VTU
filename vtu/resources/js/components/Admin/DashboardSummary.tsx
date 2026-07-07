@@ -4,8 +4,7 @@ import { Users, User, ListChecks, DollarSign, Wifi, Clock, X, Loader2 } from "lu
 import axios from "axios"
 import { toast } from "sonner" 
 
-// OrdersTable MUST be imported and used - ENSURE THIS PATH IS CORRECT
-import OrdersTable from './OrdersTable' 
+import TransactionsTable from './TransactionsTable' 
 
 // --- 1. Define Data Structure for Live Data ---
 interface SummaryData {
@@ -136,7 +135,7 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({ setActive }) => {
             <h3 className="text-2xl font-bold">Recent Transactions</h3>
             
             <>
-              <OrdersTable />
+              <TransactionsTable />
             </>
 
         </motion.div>

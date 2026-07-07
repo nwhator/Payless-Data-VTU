@@ -131,6 +131,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     Route::get('/orders', [DashboardController::class, 'order'])->name('admin.orders');
     Route::get('/transactions', [DashboardController::class, 'transactions'])->name('admin.transactions');
+    Route::get('/agents', [DashboardController::class, 'agents'])->name('admin.agents');
     Route::put('/orders/{id}/status', [DashboardController::class, 'updateStatus']);
 
     Route::get('/users', [UserController::class, 'indexAdmin']);
