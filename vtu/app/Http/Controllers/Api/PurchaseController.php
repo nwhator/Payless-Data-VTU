@@ -33,7 +33,8 @@ class PurchaseController extends Controller
 
         $buyer   = User::findOrFail($validated['buyer_id']);
         $product = Product::findOrFail($validated['product_id']);
-        $agent   = $validated['agent_id'] ? User::find($validated['agent_id']) : null;
+        $agentId = $validated['agent_id'] ?? null;
+        $agent   = $agentId ? User::find($agentId) : null;
         $payer   = $agent ?? $buyer;
 
         $costPrice = $product->api_price ?? $product->base_price ?? 0;

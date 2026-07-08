@@ -169,7 +169,7 @@ const AdminPurchase: React.FC = () => {
 
       const data = await res.json()
 
-      if (data.success) {
+      if (data.success || data.status) {
         toast.success(data.message || "✅ Purchase successful!")
         if (type === "customer") {
           setCustomerForm({ buyer_id: user.id.toString(), product_id: "", customer_phone: "" })
