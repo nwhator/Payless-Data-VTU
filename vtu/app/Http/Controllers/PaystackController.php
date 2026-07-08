@@ -81,7 +81,7 @@ class PaystackController extends Controller
             $validated['email'] // customer's email
         );
     
-        $purchaseCallbackUrl = "https://paylessdata.org/paystack/callback";
+        $purchaseCallbackUrl = "https://vtu.paylessdata.org/paystack/callback";
     
         try {
             // Initialize Paystack with TOTAL amount (including fee)
