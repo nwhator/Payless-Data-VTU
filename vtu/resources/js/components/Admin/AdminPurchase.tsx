@@ -86,16 +86,37 @@ const AdminPurchase: React.FC = () => {
     customer_phone: "",
   })
 
-  const getCsrf = () =>
+  const getMetaCsrf = () =>
     (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ""
+
+  const getCookieCsrf = () => {
+    const tokenMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+    return tokenMatch?.[1] ? decodeURIComponent(tokenMatch[1]) : ""
+  }
+
+  const refreshCsrfCookie = async () => {
+    await fetch("/sanctum/csrf-cookie", {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+    })
+  }
 
   // ✅ Fetch products & agents
   useEffect(() => {
     const loadData = async () => {
       try {
+        await refreshCsrfCookie()
+
         const [productsRes, agentsRes] = await Promise.all([
-          fetch("/admin/products", { headers: { Accept: "application/json" } }),
-          fetch("/admin/agents", { headers: { Accept: "application/json" } }),
+          fetch("/admin/products", {
+            headers: { Accept: "application/json" },
+            credentials: "same-origin",
+          }),
+          fetch("/admin/agents", {
+            headers: { Accept: "application/json" },
+            credentials: "same-origin",
+          }),
         ])
 
         const productsData = await productsRes.json()
@@ -117,6 +138,16 @@ const AdminPurchase: React.FC = () => {
   const handleSubmit = async (type: "customer" | "agent") => {
     setLoading(true)
     try {
+      await refreshCsrfCookie()
+
+      const metaToken = getMetaCsrf()
+      const cookieToken = getCookieCsrf()
+
+      if (!metaToken && !cookieToken) {
+        toast.error("Session token missing. Please refresh the page and try again.")
+        return
+      }
+
       const payload = type === "customer" ? customerForm : agentForm
 
       const res = await fetch("/admin/purchase", {
@@ -124,10 +155,17 @@ const AdminPurchase: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-CSRF-TOKEN": getCsrf(),
+          ...(metaToken ? { "X-CSRF-TOKEN": metaToken } : {}),
+          ...(cookieToken ? { "X-XSRF-TOKEN": cookieToken } : {}),
         },
+        credentials: "same-origin",
         body: JSON.stringify(payload),
       })
+
+      if (res.status === 419) {
+        toast.error("Session expired. Please refresh the page and try again.")
+        return
+      }
 
       const data = await res.json()
 
