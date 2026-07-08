@@ -58,7 +58,7 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
             isSuccess: status === "success",
             message: decodedMessage,
         };
-    }, []);
+    });
 
     // --- 2. Clean URL by removing query params after load ---
     useEffect(() => {
@@ -68,7 +68,7 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
     }, [status]);
 
     // --- 3. UI Text / Styling ---
-    const pageTitle = isSuccess ? "Upgrade Complete! 🎉" : "Transaction Failed";
+    const pageTitle = isSuccess ? "Upgrade Complete!" : "Transaction Failed";
     const boxClass = isSuccess
         ? "bg-green-100 border-green-500 text-green-800"
         : "bg-red-100 border-red-500 text-red-800";
