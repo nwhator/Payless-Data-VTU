@@ -184,9 +184,15 @@ const AdminPurchase: React.FC = () => {
               type="text"
               className="w-full bg-white/10 text-white border border-white/10 rounded-lg px-3 py-2 placeholder:text-slate-400"
               value={customerForm.customer_phone}
-              onChange={(e) => setCustomerForm({ ...customerForm, customer_phone: e.target.value })}
-              placeholder="e.g. 0241234567"
-            />
+			  onChange={(e) => {
+			    console.log("Typing:", e.target.value);
+			    setCustomerForm((prev) => ({
+			      ...prev,
+			      customer_phone: e.target.value,
+			    }));
+			  }}
+			  placeholder="e.g. 0241234567"
+			/>
           </div>
         </div>
 

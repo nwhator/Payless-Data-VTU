@@ -76,7 +76,7 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
         : "bg-red-100 border-red-500 text-red-800";
 
     const mainButtonText = isSuccess ? "Go to Agent Dashboard" : "Review Upgrade Options";
-    const mainButtonLink = isSuccess ? "/agent/dashboard" : "/dashboard/settings/upgrade";
+    const mainButtonLink = isSuccess ? "/dashboard" : "/dashboard";
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -110,7 +110,7 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
                     
                     {!isSuccess && (
                         <Link
-                            href="/dashboard/settings/upgrade"
+                            href="/dashboard"
                             className="text-sm text-indigo-500 hover:text-indigo-600 font-medium"
                         >
                             Go back to Upgrade Page
