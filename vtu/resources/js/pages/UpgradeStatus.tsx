@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
 
 // Local Props (not really used but left here for clarity/extendability)
 interface UpgradeStatusProps {}
@@ -43,7 +43,7 @@ const ErrorIcon: React.FC = () => (
 const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
 
     // --- 1. Extract & decode URL parameters ---
-    const { isSuccess, message, status } = useMemo(() => {
+    const [{ isSuccess, message, status }] = useState(() => {
         const urlParams = new URLSearchParams(window.location.search);
 
         const status = urlParams.get("status");
@@ -63,10 +63,8 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
     // --- 2. Clean URL by removing query params after load ---
     useEffect(() => {
         if (!status) return;
-        router.visit(window.location.pathname, {
-            replace: true,
-            preserveScroll: true,
-        });
+
+        window.history.replaceState({}, document.title, window.location.pathname);
     }, [status]);
 
     // --- 3. UI Text / Styling ---
@@ -75,8 +73,12 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
         ? "bg-green-100 border-green-500 text-green-800"
         : "bg-red-100 border-red-500 text-red-800";
 
-    const mainButtonText = isSuccess ? "Go to Agent Dashboard" : "Review Upgrade Options";
-    const mainButtonLink = isSuccess ? "/dashboard" : "/dashboard";
+    const mainButtonText = isSuccess ? "Go to Dashboard" : "Review Upgrade Options";
+    const mainButtonLink = isSuccess ? "/dashboard/customer" : "/dashboard/customer";
+
+    const openUpgradeTab = () => {
+        window.localStorage.setItem("cd:active", "upgrade");
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -98,6 +100,7 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
                 {/* Main Action Button */}
                 <Link
                     href={mainButtonLink}
+                    onClick={!isSuccess ? openUpgradeTab : undefined}
                     className={`w-full flex justify-center py-3 px-4 rounded-lg text-lg font-medium text-white shadow-xl transition duration-200 uppercase tracking-wider ${
                         isSuccess ? "bg-indigo-600 hover:bg-indigo-700" : "bg-yellow-600 hover:bg-yellow-700"
                     }`}
@@ -110,7 +113,8 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
                     
                     {!isSuccess && (
                         <Link
-                            href="/dashboard"
+                            href="/dashboard/customer"
+                            onClick={openUpgradeTab}
                             className="text-sm text-indigo-500 hover:text-indigo-600 font-medium"
                         >
                             Go back to Upgrade Page
@@ -118,10 +122,10 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
                     )}
 
                     <Link
-                        href="/"
+                        href="/dashboard/customer"
                         className="text-sm text-gray-500 hover:text-gray-700 font-medium"
                     >
-                        Go back Home (/)
+                        Go back Home
                     </Link>
                 </div>
             </div>

@@ -40,6 +40,15 @@ Route::get('/', function () {
     return Inertia::render('auth/login');
 })->name('home');
 
+Route::get('/dashboard', function () {
+    return match (Auth::user()->role) {
+        'admin'    => redirect()->route('admin.dashboard'),
+        'agent'    => redirect()->route('agent.dashboard'),
+        'customer' => redirect()->route('customer.dashboard'),
+        default    => redirect()->route('home'),
+    };
+})->middleware('auth')->name('dashboard');
+
 Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/dashboard/customer', [UserController::class, 'index'])
         ->name('customer.dashboard');

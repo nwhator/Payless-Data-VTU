@@ -31,6 +31,38 @@ interface Product {
   agent_price: number
 }
 
+interface SectionProps {
+  title: string
+  type: "customer" | "agent"
+  color: string
+  openSection: "customer" | "agent" | null
+  onToggle: (section: "customer" | "agent") => void
+  children: React.ReactNode
+}
+
+const Section: React.FC<SectionProps> = ({
+  title,
+  type,
+  color,
+  openSection,
+  onToggle,
+  children,
+}) => (
+  <div className="bg-white/10 border border-white/10 rounded-xl overflow-hidden shadow-md backdrop-blur-md">
+    <button
+      onClick={() => onToggle(type)}
+      className={`w-full flex justify-between items-center px-6 py-4 text-left text-lg font-semibold ${color} transition-colors`}
+    >
+      <span>{title}</span>
+      {openSection === type ? <ChevronUp /> : <ChevronDown />}
+    </button>
+
+    {openSection === type && (
+      <div className="p-6 border-t border-white/10 bg-[#0F1E27]/60 space-y-5">{children}</div>
+    )}
+  </div>
+)
+
 const AdminPurchase: React.FC = () => {
   const { auth } = usePage<PageProps>().props
   const user = auth.user
@@ -124,36 +156,16 @@ const AdminPurchase: React.FC = () => {
   const toggle = (section: "customer" | "agent") =>
     setOpenSection(openSection === section ? null : section)
 
-  const Section = ({
-    title,
-    type,
-    color,
-    children,
-  }: {
-    title: string
-    type: "customer" | "agent"
-    color: string
-    children: React.ReactNode
-  }) => (
-    <div className="bg-white/10 border border-white/10 rounded-xl overflow-hidden shadow-md backdrop-blur-md">
-      <button
-        onClick={() => toggle(type)}
-        className={`w-full flex justify-between items-center px-6 py-4 text-left text-lg font-semibold ${color} transition-colors`}
-      >
-        <span>{title}</span>
-        {openSection === type ? <ChevronUp /> : <ChevronDown />}
-      </button>
-
-      {openSection === type && (
-        <div className="p-6 border-t border-white/10 bg-[#0F1E27]/60 space-y-5">{children}</div>
-      )}
-    </div>
-  )
-
   return (
     <div className="space-y-6">
       {/* Purchase for Customer */}
-      <Section title="📱 Purchase Data for Customer" type="customer" color="hover:bg-blue-900/20">
+      <Section
+        title="📱 Purchase Data for Customer"
+        type="customer"
+        color="hover:bg-blue-900/20"
+        openSection={openSection}
+        onToggle={toggle}
+      >
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 text-sm text-slate-300">Product</label>
@@ -184,15 +196,14 @@ const AdminPurchase: React.FC = () => {
               type="text"
               className="w-full bg-white/10 text-white border border-white/10 rounded-lg px-3 py-2 placeholder:text-slate-400"
               value={customerForm.customer_phone}
-			  onChange={(e) => {
-			    console.log("Typing:", e.target.value);
-			    setCustomerForm((prev) => ({
-			      ...prev,
-			      customer_phone: e.target.value,
-			    }));
-			  }}
-			  placeholder="e.g. 0241234567"
-			/>
+              onChange={(e) =>
+                setCustomerForm((prev) => ({
+                  ...prev,
+                  customer_phone: e.target.value,
+                }))
+              }
+              placeholder="e.g. 0241234567"
+            />
           </div>
         </div>
 
@@ -206,7 +217,13 @@ const AdminPurchase: React.FC = () => {
       </Section>
 
       {/* Purchase for Agent’s Customer */}
-      <Section title="👥 Purchase Data for Agent’s Customer" type="agent" color="hover:bg-green-900/20">
+      <Section
+        title="👥 Purchase Data for Agent’s Customer"
+        type="agent"
+        color="hover:bg-green-900/20"
+        openSection={openSection}
+        onToggle={toggle}
+      >
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 text-sm text-slate-300">Agent</label>

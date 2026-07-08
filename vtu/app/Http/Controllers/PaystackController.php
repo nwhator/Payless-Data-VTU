@@ -81,7 +81,7 @@ class PaystackController extends Controller
             $validated['email'] // customer's email
         );
     
-        $purchaseCallbackUrl = "https://paylessdata.net/paystack/callback";
+        $purchaseCallbackUrl = "https://paylessdata.org/paystack/callback";
     
         try {
             // Initialize Paystack with TOTAL amount (including fee)
@@ -441,7 +441,7 @@ class PaystackController extends Controller
             $validated['email']
         );
     
-        $purchaseCallbackUrl = "https://paylessdata.net/paystack/main-callback";
+        $purchaseCallbackUrl = "https://paylessdata.org/paystack/main-callback";
     
         try {
             // Initialize Paystack with TOTAL amount (including fee)
@@ -555,19 +555,20 @@ class PaystackController extends Controller
                     // 4. Call the reusable fulfillment method
                     $order = $this->fulfillOrder($transaction, $customer, $product, $recipientNumber, $walletService, $request->ip(), $request->userAgent());
     
-                    // Success Redirect to PERSONALIZED page
                     return redirect()
-                        ->route('purchase.success')
-                        ->with('message', "Great news, {$greetingName}! Your purchase of {$productName} has been initiated. Check your dashboard for status updates.")
-                        ->with('order_id', $order->id);
+                        ->route('customer.dashboard', [
+                            'status' => 'success',
+                            'message' => "Great news, {$greetingName}! Your purchase of {$productName} has been initiated. Check your dashboard for status updates.",
+                        ]);
                 }
     
                 // Missing essential data
                 Log::error('Direct purchase fulfillment failed due to missing metadata', ['reference' => $reference, 'meta' => $meta]);
                 return redirect()
-                    ->route('purchase.failed')
-                    ->with('error', 'Payment verified, but required data was missing. Please contact support immediately.')
-                    ->with('user_id', $userId);
+                    ->route('customer.dashboard', [
+                        'status' => 'error',
+                        'message' => 'Payment verified, but required data was missing. Please contact support immediately.',
+                    ]);
     
             } catch (\Throwable $e) {
                 Log::error('iDATA purchase failed during direct fulfillment', [
@@ -575,19 +576,20 @@ class PaystackController extends Controller
                     'error' => $e->getMessage(),
                 ]);
     
-                // Fulfillment Failed Redirect
                 return redirect()
-                    ->route('purchase.failed')
-                    ->with('error', 'Payment verified, but data purchase failed due to an internal error. Funds are safe; check your dashboard or contact support.')
-                    ->with('user_id', $userId);
+                    ->route('customer.dashboard', [
+                        'status' => 'error',
+                        'message' => 'Payment verified, but data purchase failed due to an internal error. Funds are safe; check your dashboard or contact support.',
+                    ]);
             }
         }
     
         // 7. Payment Not Successful Redirect
         return redirect()
-            ->route('purchase.failed')
-            ->with('error', 'Payment was not successful or was canceled. You have not been charged.')
-            ->with('user_id', $userId);
+            ->route('customer.dashboard', [
+                'status' => 'error',
+                'message' => 'Payment was not successful or was canceled. You have not been charged.',
+            ]);
     }
 
     /**
