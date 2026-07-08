@@ -8,6 +8,7 @@ interface CustomerUser {
     name: string;
     email: string;
     role: "customer" | "agent";
+    upgrade_status?: string | null;
 }
 
 interface Props {
@@ -18,6 +19,61 @@ interface Props {
 
 const AgentUpgrade: React.FC<Props> = ({ upgradeFee, user, onUpgrade }) => { // <--- Receive user prop
     const [loading, setLoading] = useState(false);
+
+    if (user.upgrade_status === 'pending') {
+        return (
+            <div className="space-y-8 max-w-4xl mx-auto">
+                <header className="text-center space-y-3 p-6 rounded-xl bg-[#071821] border border-gray-700">
+                    <h1 className="text-3xl font-extrabold text-amber-400">
+                        Upgrade Pending Approval ⏳
+                    </h1>
+                    <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+                        Your payment has been received and verified successfully. An admin is currently reviewing your request.
+                    </p>
+                </header>
+                <div className="p-8 text-center rounded-xl bg-[#00121A] border border-amber-500">
+                    <p className="text-xl font-semibold mb-2 text-white">
+                        Status: Pending Admin Review
+                    </p>
+                    <p className="text-gray-400 text-sm mb-6">
+                        No further action is required. Your account will be upgraded to an Agent account shortly.
+                    </p>
+                    <div className="flex justify-center space-x-6 text-sm">
+                        <p className="text-gray-500">Secured by Paystack • Payment Complete</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (user.upgrade_status === 'approved' || user.role === 'agent') {
+        return (
+            <div className="space-y-8 max-w-4xl mx-auto">
+                <header className="text-center space-y-3 p-6 rounded-xl bg-[#071821] border border-gray-700">
+                    <h1 className="text-3xl font-extrabold text-[#4DFF8F]">
+                        Upgrade Approved! 🎉
+                    </h1>
+                    <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+                        Your account has been successfully upgraded to an Agent account.
+                    </p>
+                </header>
+                <div className="p-8 text-center rounded-xl bg-[#00121A] border border-green-500">
+                    <p className="text-xl font-semibold mb-2 text-white">
+                        Status: Active Agent
+                    </p>
+                    <p className="text-gray-400 text-sm mb-6">
+                        Please reload the page or click below to access the Agent Portal.
+                    </p>
+                    <a
+                        href="/agent/dashboard"
+                        className="inline-block bg-[#4DFF8F] hover:bg-[#39cc70] text-black font-extrabold px-6 py-3 rounded-lg text-lg transition duration-200"
+                    >
+                        Go to Agent Dashboard
+                    </a>
+                </div>
+            </div>
+        );
+    }
 
     // Focus on concrete, financial advantages
     const benefits = [

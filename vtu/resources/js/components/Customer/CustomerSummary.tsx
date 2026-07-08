@@ -10,6 +10,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  role?: string;
+  upgrade_status?: string | null;
 }
 
 export interface Wallet {
@@ -273,6 +275,8 @@ export default function CustomerSummary({
           userId={user.id} 
           userEmail={user.email} 
           upgradeFee={20}
+          upgradeStatus={user.upgrade_status}
+          userRole={user.role}
           onSuccess={handleFundSuccess} // Pass the handler to close the modal
         />
       </Modal>

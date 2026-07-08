@@ -41,6 +41,7 @@ interface CustomerUser {
   name: string;
   email: string;
   role: "customer" | "agent";
+  upgrade_status?: string | null;
 }
 
 interface WalletData {

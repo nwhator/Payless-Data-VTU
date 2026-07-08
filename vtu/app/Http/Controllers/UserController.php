@@ -73,6 +73,8 @@ class UserController extends Controller
             ];
         });
 
+        $latestUpgrade = \App\Models\AgentUpgrade::where('user_id', $user->id)->latest()->first();
+
         return Inertia::render('customer/CustomerDashboard', [
             'auth' => [
                 'user' => [
@@ -80,6 +82,7 @@ class UserController extends Controller
                     'name'  => $user->name,
                     'email' => $user->email,
                     'role'  => $user->role,
+                    'upgrade_status' => $latestUpgrade ? $latestUpgrade->status : null,
                 ],
             ],
             'wallet' => [

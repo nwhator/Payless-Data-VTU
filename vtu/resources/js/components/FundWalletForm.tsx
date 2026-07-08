@@ -8,6 +8,8 @@ interface UpgradeToAgentFormProps {
   userId: number;
   userEmail: string;
   upgradeFee?: number; // e.g., 50.00 GHS
+  upgradeStatus?: string | null;
+  userRole?: string;
   onSuccess?: () => void;
 }
 
@@ -22,11 +24,35 @@ export default function UpgradeToAgentForm({
   userId, 
   userEmail, 
   upgradeFee = 20,
+  upgradeStatus,
+  userRole,
   onSuccess 
 }: UpgradeToAgentFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+
+  if (upgradeStatus === 'pending') {
+    return (
+      <div className="text-center space-y-4 p-6 bg-[#00121A] rounded-xl border border-yellow-500">
+        <h3 className="text-xl font-semibold text-white">Upgrade Pending Approval</h3>
+        <p className="text-slate-300 text-sm">
+          We have verified your upgrade payment. An admin is currently reviewing your account. No further payment is needed.
+        </p>
+      </div>
+    );
+  }
+
+  if (upgradeStatus === 'approved' || userRole === 'agent') {
+    return (
+      <div className="text-center space-y-4 p-6 bg-[#00121A] rounded-xl border border-green-500">
+        <h3 className="text-xl font-semibold text-white">Already an Agent!</h3>
+        <p className="text-slate-300 text-sm">
+          Your account has been upgraded successfully. Please reload the page or visit the Agent Portal.
+        </p>
+      </div>
+    );
+  }
 
   // Calculate fee for upgrade
   const getPaymentBreakdown = (): PaymentBreakdown => {

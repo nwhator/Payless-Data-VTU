@@ -39,7 +39,9 @@ const handleLogout = async () => {
 
 const Sidebar: React.FC<Props> = ({ active, setActive, mobileOpen, onClose }) => {
     
-    const { url } = usePage()
+    const { url, props } = usePage()
+    const auth = props.auth as { user: any };
+    const user = auth?.user;
     
   return (
     <aside className={`fixed z-30 inset-y-0 left-0 w-64 bg-[#071821] border-r border-gray-800 transform ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300`}>
@@ -69,6 +71,15 @@ const Sidebar: React.FC<Props> = ({ active, setActive, mobileOpen, onClose }) =>
             // Special styling for Logout
             const logoutClass = it.key === 'logout' ? 'text-red-400 hover:text-red-300' : '';
 
+            let label = it.label;
+            if (it.key === 'upgrade') {
+              if (user?.upgrade_status === 'pending') {
+                label = 'Upgrade Status ⏳';
+              } else if (user?.upgrade_status === 'approved' || user?.role === 'agent') {
+                label = 'Agent Portal 🎉';
+              }
+            }
+
             return (
               <button 
                 key={it.key} 
@@ -83,7 +94,7 @@ const Sidebar: React.FC<Props> = ({ active, setActive, mobileOpen, onClose }) =>
                 className={`w-full text-left flex items-center gap-3 p-3 rounded-md transition ${activeClass} ${logoutClass}`}
               >
                 <Icon size={18} />
-                <span>{it.label}</span>
+                <span>{label}</span>
               </button>
             );
           })}
