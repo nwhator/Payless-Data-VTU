@@ -2,7 +2,7 @@ import React from 'react';
 import { Mail, MessageSquare } from 'lucide-react';
 
 // --- CONSTANTS ---
-const AGENT_SUPPORT_EMAIL = "admin@paylessdata.net";
+const AGENT_SUPPORT_EMAIL = "admin@paylessdata.org";
 
 // --- MAIN COMPONENT ---
 const SupportCenter: React.FC = () => {

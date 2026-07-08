@@ -32,7 +32,7 @@ const AgentWalletFunding: React.FC = () => {
 
   const [form, setForm] = useState({
     email: "",
-    amount: 100.0,
+    amount: 10.0,
   });
 
   const [balance, setBalance] = useState<number>(0);
@@ -87,7 +87,7 @@ const AgentWalletFunding: React.FC = () => {
 
   // Calculate fee preview
   const getFeePreview = (): PaymentBreakdown | null => {
-    if (!form.amount || form.amount < 100) return null;
+    if (!form.amount || form.amount < 10) return null;
     
     const feePercentage = 2.5;
     const amount = form.amount;
@@ -151,7 +151,7 @@ const AgentWalletFunding: React.FC = () => {
     [form]
   );
 
-  const isAmountValid = form.amount >= 100;
+  const isAmountValid = form.amount >= 10;
 
   return (
     <div className="bg-white/5 p-6 rounded-xl border border-white/10 shadow-xl w-full">

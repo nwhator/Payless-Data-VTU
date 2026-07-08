@@ -107,7 +107,7 @@ class DatamartWebhookController extends Controller
             if ($newStatus === 'completed') {
                 try {
                     // Send the OrderCompletedMail to the admin email, queuing for performance
-                    Mail::to('admin@paylessdata.net')->send(new OrderCompletedMail($order));
+                    Mail::to('admin@paylessdata.org')->send(new OrderCompletedMail($order));
                     Log::info('Admin notification email queued for completed order.', ['order_id' => $order->id]);
 
                 } catch (\Throwable $e) {

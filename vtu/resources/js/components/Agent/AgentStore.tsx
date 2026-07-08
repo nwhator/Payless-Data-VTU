@@ -9,10 +9,6 @@ import PublishModal from "../modals/PublishModal"
 import StoreEditor from "../StoreEditor"
 import { StoreData } from "../types"
 
-const getCsrf = (): string =>
-    document
-        ?.querySelector('meta[name="csrf-token"]')
-        ?.getAttribute("content") || ""
 
 const AgentStore: React.FC<{
     loading?: boolean
@@ -49,9 +45,7 @@ const AgentStore: React.FC<{
 
         try {
             setPublishing(true)
-            const { data } = await axios.post("/agent/store/unpublish", {}, {
-                headers: { "X-CSRF-TOKEN": getCsrf() }
-            })
+            const { data } = await axios.post("/agent/store/unpublish", {})
 
             if (data.success) {
                 toast.info("Store set to draft.")
@@ -73,9 +67,7 @@ const AgentStore: React.FC<{
 
         try {
             setPublishing(true) // Use publishing state to prevent multiple clicks
-            const { data } = await axios.delete(`/agent/store/${store.id}`, {
-                headers: { "X-CSRF-TOKEN": getCsrf() }
-            })
+            const { data } = await axios.delete(`/agent/store/${store.id}`)
 
             if (data.success) {
                 toast.success("🗑️ Store deleted successfully!")
@@ -98,14 +90,7 @@ const AgentStore: React.FC<{
             setPublishing(true)
             const { data } = await axios.post(
                 "/agent/store/publish",
-                {},
-                {
-                    headers: {
-                        "X-CSRF-TOKEN": getCsrf(),
-                        "X-Requested-With": "XMLHttpRequest",
-                        Accept: "application/json",
-                    },
-                }
+                {}
             )
 
             interface PublishResponse {

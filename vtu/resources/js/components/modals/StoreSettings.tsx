@@ -8,6 +8,8 @@ interface Props {
   onGenerateSlug: () => void
   onSave: () => void
   onClose: () => void
+  onLogoFile?: (file: File) => void
+  onBannerFile?: (file: File) => void
   saving: boolean
 }
 
@@ -17,11 +19,17 @@ const StoreSettings: React.FC<Props> = ({
   onGenerateSlug,
   onSave,
   onClose,
+  onLogoFile,
+  onBannerFile,
   saving,
 }) => {
   const handleFile = (e: ChangeEvent<HTMLInputElement>, key: keyof StoreData) => {
     const file = e.target.files?.[0]
-    if (file) onChange(key, URL.createObjectURL(file))
+    if (file) {
+      onChange(key, URL.createObjectURL(file))
+      if (key === "logo" && onLogoFile) onLogoFile(file)
+      if (key === "banner_image" && onBannerFile) onBannerFile(file)
+    }
   }
 
   return (

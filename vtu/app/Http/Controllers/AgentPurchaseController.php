@@ -266,6 +266,220 @@ class AgentPurchaseController extends Controller
     }
 
     /**
+     * Initialize BULK agent purchase with wallet-only logic
+     * Route: POST /agent/purchase/bulk
+     */
+    public function initializeBulk(
+        Request $request,
+        WalletService $walletService
+    ): JsonResponse {
+        /** @var \App\Models\User|null $agent */
+        $agent = Auth::user();
+
+        if (!$agent || $agent->role !== 'agent') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Agent access required.'
+            ], 403);
+        }
+
+        // Validate request
+        $validated = $request->validate([
+            'orders' => 'required|array|min:1',
+            'orders.*.product_id' => 'required|integer|exists:products,id',
+            'orders.*.beneficiary_number' => 'required|string',
+            'orders.*.reference' => 'nullable|string|max:255',
+        ]);
+
+        $ordersData = $validated['orders'];
+        $totalCostCedis = 0.0;
+        $orderProducts = [];
+
+        // 1. Pre-validate products and calculate total cost
+        foreach ($ordersData as $index => $orderData) {
+            $product = Product::find($orderData['product_id']);
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Product at index {$index} not found."
+                ], 400);
+            }
+            $totalCostCedis += (float) $product->agent_price;
+            $orderProducts[$index] = $product;
+        }
+
+        $balanceCedis = (float) $walletService->getBalance($agent);
+        $totalCostPesewas = (int) round($totalCostCedis * 100);
+        $balancePesewas = (int) round($balanceCedis * 100);
+
+        Log::info("Agent bulk purchase wallet check", [
+            'agent_id' => $agent->id,
+            'wallet_balance_pesewas' => $balancePesewas,
+            'required_total_pesewas' => $totalCostPesewas,
+            'sufficient_funds' => ($balancePesewas >= $totalCostPesewas) ? 'YES' : 'NO'
+        ]);
+
+        // Bulk purchase requires sufficient wallet balance upfront
+        if ($balancePesewas < $totalCostPesewas) {
+            return response()->json([
+                'success' => false,
+                'message' => "Insufficient wallet balance. Total cost is GH₵ " . number_format($totalCostCedis, 2) . ", but you only have GH₵ " . number_format($balanceCedis, 2) . ". Please fund your wallet first."
+            ], 400);
+        }
+
+        $results = [
+            'total' => count($ordersData),
+            'succeeded' => 0,
+            'failed' => 0,
+            'details' => [],
+        ];
+
+        // 2. Process each order individually so partial success/failure is handled correctly
+        foreach ($ordersData as $index => $orderData) {
+            $product = $orderProducts[$index];
+            $productPrice = (float) $product->agent_price;
+            $beneficiary = $orderData['beneficiary_number'];
+            $customRef = $orderData['reference'] ?? null;
+
+            $transaction = null;
+
+            try {
+                // Debit wallet for this specific order
+                $transaction = $walletService->debit(
+                    $agent,
+                    $productPrice,
+                    "Bulk Purchase: {$product->name} to {$beneficiary}",
+                    'purchase',
+                    $product->id,
+                    [
+                        'beneficiary_number' => $beneficiary,
+                        'reference' => $customRef,
+                        'agent_id' => $agent->id,
+                        'source_type' => 'agent_bulk_purchase',
+                        'fee_applied' => false,
+                        'fee_amount' => 0,
+                    ]
+                );
+
+                // Fulfill order
+                $order = $this->fulfillAgentOrder(
+                    $transaction,
+                    $agent,
+                    $product,
+                    $beneficiary,
+                    $request->ip(),
+                    $request->userAgent(),
+                    $walletService
+                );
+
+                // Check fulfillment result
+                if (isset($order->vendor_error_message)) {
+                    // Reversal
+                    $walletService->credit(
+                        $agent,
+                        $productPrice,
+                        "REVERSAL: Bulk Fulfillment Failed - {$product->name} to {$beneficiary}",
+                        'reversal',
+                        [
+                            'original_transaction_id' => $transaction->id,
+                            'reason' => $order->vendor_error_message,
+                        ],
+                        null,
+                        $product->id
+                    );
+
+                    TransactionService::update($transaction, [
+                        'status' => 'reversed',
+                        'notes' => 'Reversed due to bulk vendor failure: ' . $order->vendor_error_message,
+                    ]);
+
+                    $results['failed']++;
+                    $results['details'][] = [
+                        'recipient' => $beneficiary,
+                        'product' => $product->name,
+                        'status' => 'failed',
+                        'message' => $order->vendor_error_message,
+                    ];
+                } else {
+                    TransactionService::update($transaction, [
+                        'status' => 'completed',
+                    ]);
+
+                    $results['succeeded']++;
+                    $results['details'][] = [
+                        'recipient' => $beneficiary,
+                        'product' => $product->name,
+                        'status' => 'completed',
+                        'order_id' => $order->id,
+                    ];
+                }
+
+            } catch (\Throwable $e) {
+                Log::error("Bulk order index {$index} system failed", [
+                    'error' => $e->getMessage(),
+                    'agent_id' => $agent->id,
+                ]);
+
+                // Refund if transaction was debited
+                if ($transaction) {
+                    try {
+                        $walletService->credit(
+                            $agent,
+                            $productPrice,
+                            "REVERSAL: System Error - {$product->name} to {$beneficiary}",
+                            'reversal',
+                            ['original_transaction_id' => $transaction->id, 'reason' => 'System exception during bulk fulfillment.'],
+                            null,
+                            $product->id
+                        );
+
+                        TransactionService::update($transaction, [
+                            'status' => 'reversed',
+                            'notes' => 'Reversed due to system exception during bulk fulfillment.',
+                        ]);
+                    } catch (\Throwable $reversalEx) {
+                        Log::critical("FAILED TO REVERSE BULK TRANSACTION - Manual recovery required", [
+                            'transaction_id' => $transaction->id,
+                            'error' => $reversalEx->getMessage()
+                        ]);
+                    }
+                }
+
+                $results['failed']++;
+                $results['details'][] = [
+                    'recipient' => $beneficiary,
+                    'product' => $product->name,
+                    'status' => 'failed',
+                    'message' => 'System error occurred during order fulfillment.',
+                ];
+            }
+        }
+
+        $allFailed = ($results['failed'] === $results['total']);
+
+        if ($allFailed) {
+            return response()->json([
+                'success' => false,
+                'status' => 'bulk_failed',
+                'message' => 'All bulk orders failed to fulfill. All funds have been returned to your wallet.',
+                'results' => $results,
+            ], 400);
+        }
+
+        $message = "Bulk purchase completed. Succeeded: {$results['succeeded']}, Failed: {$results['failed']}.";
+        if ($results['failed'] > 0) {
+            $message .= " Failed orders have been refunded to your wallet.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'bulk_success',
+            'message' => $message,
+            'results' => $results,
+        ]);
+    }
+
+    /**
      * Handle Paystack callback for agent purchases
      * Route: GET /agent/purchase/callback
      */

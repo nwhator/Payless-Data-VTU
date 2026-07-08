@@ -47,7 +47,7 @@ class WebhookController extends Controller
                     // ✅ If order just became completed, notify admin
                     if ($order->status === 'completed' && $previousStatus !== 'completed') {
                         try {
-                            Mail::to('admin@paylessdata.net')->queue(new OrderCompletedMail($order));
+                            Mail::to('admin@paylessdata.org')->queue(new OrderCompletedMail($order));
                             Log::info("Admin notified about completed order #{$order->id}");
                         } catch (\Exception $e) {
                             Log::error("Failed to send order completion email: " . $e->getMessage());

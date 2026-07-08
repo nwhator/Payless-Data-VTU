@@ -52,10 +52,10 @@ const PaymentFailed: React.FC = () => {
                             If money was deducted, please contact support immediately:
                         </p>
                         <a 
-                            href="mailto:admin@paylessdata.net"
+                            href="mailto:admin@paylessdata.org"
                             className="text-red-400 font-bold text-lg hover:text-red-300 transition underline"
                         >
-                            admin@paylessdata.net
+                            admin@paylessdata.org
                         </a>
                     </div>
 

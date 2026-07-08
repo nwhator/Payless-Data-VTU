@@ -27,7 +27,7 @@ class PaystackAgentsController extends Controller
 
     $validated = $request->validate([
         'email'  => 'required|email', 
-        'amount' => 'required|numeric|min:100',
+        'amount' => 'required|numeric|min:10',
     ]);
     
     $amountCedis = (float) $validated['amount'];

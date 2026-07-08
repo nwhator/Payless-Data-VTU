@@ -125,6 +125,8 @@ class AgentStoreController extends Controller
             'store_description' => 'nullable|string|max:255',
             'banner_text' => 'nullable|string|max:255',
             'whatsapp_number' => 'nullable|string|max:20',
+            'logo_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'banner_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
         $store = AgentStore::updateOrCreate(
@@ -137,8 +139,12 @@ class AgentStoreController extends Controller
             ]
         );
 
-        //  Handle banner image
-        if ($request->filled('banner_image')) {
+        //  Handle banner image upload or URL
+        if ($request->hasFile('banner_file')) {
+            $file = $request->file('banner_file');
+            $path = $file->store('banners', 'public');
+            $store->banner_image = 'storage/' . $path;
+        } elseif ($request->filled('banner_image')) {
             $store->banner_image = $request->input('banner_image');
         }
 

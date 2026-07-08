@@ -22,6 +22,8 @@ const StoreModal: React.FC<Props> = ({ store, onClose, onSaved }) => {
     publish: "draft",
   })
   const [saving, setSaving] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (store) setTempStore(store)
@@ -48,7 +50,22 @@ const StoreModal: React.FC<Props> = ({ store, onClose, onSaved }) => {
     try {
       setSaving(true)
       const formData = new FormData()
-      Object.entries(tempStore).forEach(([k, v]) => formData.append(k, v || ""))
+      formData.append("store_name", tempStore.store_name)
+      formData.append("store_slug", tempStore.store_slug)
+      formData.append("store_description", tempStore.description || "")
+      formData.append("publish", tempStore.publish || "draft")
+
+      if (logoFile) {
+        formData.append("logo_file", logoFile)
+      } else if (tempStore.logo && !tempStore.logo.startsWith("blob:")) {
+        formData.append("logo_url", tempStore.logo)
+      }
+
+      if (bannerFile) {
+        formData.append("banner_file", bannerFile)
+      } else if (tempStore.banner_image && !tempStore.banner_image.startsWith("blob:")) {
+        formData.append("banner_image", tempStore.banner_image)
+      }
 
       const { data } = await axios.post("/agent/store", formData)
       if (data.success) {
@@ -83,6 +100,8 @@ const StoreModal: React.FC<Props> = ({ store, onClose, onSaved }) => {
             onChange={handleChange}
             onGenerateSlug={handleGenerateSlug}
             onSave={handleSave}
+            onLogoFile={setLogoFile}
+            onBannerFile={setBannerFile}
             saving={saving}
             onClose={onClose}
           />

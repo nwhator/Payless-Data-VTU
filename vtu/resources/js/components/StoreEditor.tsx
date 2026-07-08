@@ -51,7 +51,7 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
   const [checkingSlug, setCheckingSlug] = useState(false)
   const [whatsappValid, setWhatsappValid] = useState(true)
 
-  const [bannerType, setBannerType] = useState<"auto" | "static" | "none">("none")
+  const [bannerType, setBannerType] = useState<"auto" | "static" | "custom" | "none">("none")
   const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(
     store.banner_image || null
   )
@@ -63,6 +63,7 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [bannerData, setBannerData] = useState<BannerData>({})
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
 
   // --- HANDLE INPUT ---
   const handleChange = useCallback(
@@ -133,6 +134,14 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
     setBannerPreviewUrl(path)
   }, [])
 
+  // --- CUSTOM BANNER UPLOAD ---
+  const handleBannerUpload = useCallback((file: File) => {
+    setBannerType("custom")
+    setBannerFile(file)
+    setBannerPreviewUrl(URL.createObjectURL(file))
+    setSelectedStaticBanner(null)
+  }, [])
+
   // --- AUTO BANNER ---
   const generateAutoBanner = useCallback(async () => {
     if (!formData.store_name.trim()) {
@@ -172,7 +181,11 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
         form.append("store_description", formData.store_description)
         if (formData.whatsapp_number)
           form.append("whatsapp_number", formData.whatsapp_number)
-        if (bannerPreviewUrl) form.append("banner_image", bannerPreviewUrl)
+        if (bannerFile) {
+          form.append("banner_file", bannerFile)
+        } else if (bannerPreviewUrl && !bannerPreviewUrl.startsWith("blob:")) {
+          form.append("banner_image", bannerPreviewUrl)
+        }
         if (logoFile) form.append("logo_file", logoFile)
 
         const { data } = await axios.post("/agent/store", form, {
@@ -189,7 +202,7 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
         setSaving(false)
       }
     },
-    [formData, bannerPreviewUrl, logoFile, onSaved, whatsappValid]
+    [formData, bannerPreviewUrl, bannerFile, logoFile, onSaved, whatsappValid]
   )
 
   // --- WHATSAPP LINK ---
@@ -399,7 +412,7 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
             {/* BANNER */}
             <div>
               <label className="text-slate-300 text-sm">Banner</label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="mt-2 grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={generateAutoBanner}
@@ -423,6 +436,21 @@ const StoreEditor: React.FC<StoreEditorProps> = ({ store, onCancel, onSaved }) =
                 >
                   Static Banner
                 </button>
+                <label
+                  className={`p-3 rounded-lg border text-xs cursor-pointer text-center flex items-center justify-center ${
+                    bannerType === "custom"
+                      ? "border-[#4DFF8F] bg-[#4DFF8F]/10"
+                      : "border-white/10"
+                  }`}
+                >
+                  Upload Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleBannerUpload(e.target.files[0])}
+                  />
+                </label>
               </div>
 
               {bannerType === "static" && (
