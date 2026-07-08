@@ -58,7 +58,7 @@ const UpgradeStatus: React.FC<UpgradeStatusProps> = () => {
             isSuccess: status === "success",
             message: decodedMessage,
         };
-    }, []);
+    });
 
     // --- 2. Clean URL by removing query params after load ---
     useEffect(() => {
