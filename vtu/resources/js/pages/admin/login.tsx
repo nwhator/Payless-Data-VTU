@@ -90,7 +90,7 @@ export default function AdminLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm"
+                className="w-full px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm text-white placeholder:text-slate-500"
                 placeholder="admin@yourdomain.com"
               />
               {errors.email && (
@@ -112,7 +112,7 @@ export default function AdminLogin() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm"
+                className="w-full px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm text-white placeholder:text-slate-500"
                 placeholder="••••••••"
               />
               {errors.password && (
