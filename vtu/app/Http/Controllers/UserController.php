@@ -215,6 +215,7 @@ class UserController extends Controller
 
         $orders = $user->orders()
             ->latest()
+            ->limit(100)
             ->get();
 
         $orderTransactionIds = $orders
@@ -225,14 +226,16 @@ class UserController extends Controller
 
         $transactionsQuery = $user->transactions()
             ->with('product')
-            ->latest();
+            ->latest()
+            ->limit(100);
 
         if ($orderTransactionIds->isNotEmpty()) {
             $transactionsQuery->whereNotIn('id', $orderTransactionIds);
         }
 
         $orderRows = $orders->map(function ($order) {
-                $fullAmount = ($order->currency ?? 'GHS') . ' ' . number_format($order->amount, 2);
+                $amountVal = $order->amount !== null ? (float) $order->amount : 0.0;
+                $fullAmount = ($order->currency ?? 'GHS') . ' ' . number_format($amountVal, 2);
                 $status = $this->displayStatus($order->status);
 
                 return [
@@ -245,9 +248,9 @@ class UserController extends Controller
                     'paymentStatus' => $this->displayStatus($order->payment_status),
                     'status' => $status,
                     'statusColor' => $this->statusColor($status),
-                    'date' => $order->created_at->format('M d, Y'),
-                    'time' => $order->created_at->format('h:i A'),
-                    'created_at' => $order->created_at->toIso8601String(),
+                    'date' => $order->created_at ? $order->created_at->format('M d, Y') : '',
+                    'time' => $order->created_at ? $order->created_at->format('h:i A') : '',
+                    'created_at' => $order->created_at ? $order->created_at->toIso8601String() : '',
                 ];
             });
 
@@ -259,19 +262,21 @@ class UserController extends Controller
             $status = $this->displayStatus($transaction->status);
             $reference = $transaction->paystack_ref ?? $transaction->reference;
 
+            $amountVal = $transaction->amount !== null ? (float) $transaction->amount : 0.0;
+
             return [
                 'id' => 'txn-' . $transaction->id,
                 'reference' => $reference,
                 'source' => 'transaction',
                 'bundle' => trim("{$productName} {$dataVolume}"),
                 'recipient' => $recipient,
-                'amount' => ($transaction->currency ?? 'GHS') . ' ' . number_format((float) $transaction->amount, 2),
+                'amount' => ($transaction->currency ?? 'GHS') . ' ' . number_format($amountVal, 2),
                 'paymentStatus' => $status,
                 'status' => $status,
                 'statusColor' => $this->statusColor($status),
-                'date' => $transaction->created_at->format('M d, Y'),
-                'time' => $transaction->created_at->format('h:i A'),
-                'created_at' => $transaction->created_at->toIso8601String(),
+                'date' => $transaction->created_at ? $transaction->created_at->format('M d, Y') : '',
+                'time' => $transaction->created_at ? $transaction->created_at->format('h:i A') : '',
+                'created_at' => $transaction->created_at ? $transaction->created_at->toIso8601String() : '',
             ];
         });
 
