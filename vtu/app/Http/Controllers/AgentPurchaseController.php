@@ -266,12 +266,14 @@ class AgentPurchaseController extends Controller
     }
 
     /**
-     * Initialize BULK agent purchase with wallet-only logic
+     * Initialize BULK agent purchase with wallet-first, Paystack fallback
      * Route: POST /agent/purchase/bulk
      */
     public function initializeBulk(
         Request $request,
-        WalletService $walletService
+        WalletService $walletService,
+        PaystackService $paystackService,
+        PaystackFeeService $feeService
     ): JsonResponse {
         /** @var \App\Models\User|null $agent */
         $agent = Auth::user();
@@ -319,12 +321,81 @@ class AgentPurchaseController extends Controller
             'sufficient_funds' => ($balancePesewas >= $totalCostPesewas) ? 'YES' : 'NO'
         ]);
 
-        // Bulk purchase requires sufficient wallet balance upfront
+        // INSUFFICIENT FUNDS → Paystack fallback
         if ($balancePesewas < $totalCostPesewas) {
+            $paymentBreakdown = $feeService->getPaymentBreakdown($totalCostCedis);
+            $totalWithFee = $paymentBreakdown['total'];
+
+            Log::info("Agent bulk purchase Paystack fallback with fee", [
+                'agent_id' => $agent->id,
+                'original_amount' => $paymentBreakdown['amount'],
+                'fee_percentage' => $paymentBreakdown['percentage'],
+                'fee_amount' => $paymentBreakdown['fee'],
+                'total_amount' => $totalWithFee,
+            ]);
+
+            // Create a single transaction record for the entire bulk purchase
+            $transaction = TransactionService::record(
+                $agent,
+                'payment',
+                $totalCostCedis,
+                "Agent Bulk Purchase (" . count($ordersData) . " items) (Card)",
+                null,
+                [
+                    'is_bulk_purchase' => true,
+                    'bulk_orders' => $ordersData,
+                    'agent_id' => $agent->id,
+                    'source_type' => 'agent_bulk_paystack_purchase',
+                    'fee_applied' => true,
+                    'fee_percentage' => $paymentBreakdown['percentage'],
+                    'fee_amount' => $paymentBreakdown['fee'],
+                    'total_with_fee' => $totalWithFee,
+                ],
+                'initialized',
+                'GHS',
+                null,
+                $agent->email
+            );
+
+            $callbackUrl = route('agent.purchase.callback');
+
+            try {
+                $paystackResponse = $paystackService->initializeTransaction(
+                    $agent->email,
+                    $totalWithFee,
+                    [
+                        'transaction_id' => $transaction->id,
+                        'agent_id' => $agent->id,
+                        'is_bulk_purchase' => true,
+                        'original_amount' => $totalCostCedis,
+                        'fee_amount' => $paymentBreakdown['fee'],
+                    ],
+                    $callbackUrl
+                );
+            } catch (\Throwable $e) {
+                Log::error('Agent bulk Paystack initialization failed', [
+                    'error' => $e->getMessage(),
+                    'transaction_id' => $transaction->id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment initialization failed.'
+                ], 500);
+            }
+
+            $paystackRef = $paystackResponse['data']['reference'] ?? null;
+            TransactionService::update($transaction, [
+                'paystack_ref' => $paystackRef,
+                'status' => 'initialized',
+            ]);
+
             return response()->json([
-                'success' => false,
-                'message' => "Insufficient wallet balance. Total cost is GH₵ " . number_format($totalCostCedis, 2) . ", but you only have GH₵ " . number_format($balanceCedis, 2) . ". Please fund your wallet first."
-            ], 400);
+                'success' => true,
+                'status' => 'paystack_initialized',
+                'authorization_url' => $paystackResponse['data']['authorization_url'],
+                'message' => "Insufficient wallet balance. Redirecting to Paystack to pay GH₵ " . number_format($totalWithFee, 2) . " (includes " . $paymentBreakdown['percentage'] . "% processing fee).",
+                'fee_breakdown' => $paymentBreakdown,
+            ]);
         }
 
         $results = [
@@ -480,7 +551,7 @@ class AgentPurchaseController extends Controller
     }
 
     /**
-     * Handle Paystack callback for agent purchases
+     * Handle Paystack callback for agent purchases (single AND bulk)
      * Route: GET /agent/purchase/callback
      */
     public function handleCallback(
@@ -499,7 +570,7 @@ class AgentPurchaseController extends Controller
             // Verify transaction with Paystack
             $verification = $paystackService->verifyTransaction($reference);
 
-            if (!$verification || $verification['status'] !== 'success') {
+            if (!$verification || ($verification['data']['status'] ?? '') !== 'success') {
                 Log::error('Agent purchase verification failed', ['reference' => $reference]);
                 return redirect()->route('agent.dashboard')->with('error', 'Payment verification failed.');
             }
@@ -527,6 +598,77 @@ class AgentPurchaseController extends Controller
             }
 
             $agent = $transaction->user;
+
+            // ============================
+            // BULK PURCHASE CALLBACK
+            // ============================
+            $isBulk = $transaction->meta['is_bulk_purchase'] ?? false;
+
+            if ($isBulk) {
+                $bulkOrders = $transaction->meta['bulk_orders'] ?? [];
+
+                if (empty($bulkOrders)) {
+                    Log::error('Bulk purchase callback: No orders in meta', ['transaction_id' => $transaction->id]);
+                    TransactionService::update($transaction, ['status' => 'failed']);
+                    return redirect()->route('agent.dashboard')->with('error', 'Bulk order data missing.');
+                }
+
+                TransactionService::update($transaction, ['status' => 'completed']);
+
+                $succeeded = 0;
+                $failed = 0;
+                $failedMessages = [];
+
+                foreach ($bulkOrders as $orderData) {
+                    $product = Product::find($orderData['product_id']);
+                    if (!$product) {
+                        $failed++;
+                        $failedMessages[] = "Product #{$orderData['product_id']} not found";
+                        continue;
+                    }
+
+                    $beneficiary = $orderData['beneficiary_number'];
+
+                    try {
+                        $order = $this->fulfillAgentOrder(
+                            $transaction,
+                            $agent,
+                            $product,
+                            $beneficiary,
+                            $request->ip(),
+                            $request->userAgent(),
+                            $walletService
+                        );
+
+                        if (isset($order->vendor_error_message)) {
+                            $failed++;
+                            $failedMessages[] = "{$product->name} to {$beneficiary}: {$order->vendor_error_message}";
+                        } else {
+                            $succeeded++;
+                        }
+                    } catch (\Throwable $e) {
+                        $failed++;
+                        $failedMessages[] = "{$product->name} to {$beneficiary}: {$e->getMessage()}";
+                        Log::error('Bulk order fulfillment exception', [
+                            'product_id' => $product->id,
+                            'beneficiary' => $beneficiary,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                $message = "Bulk purchase completed. Succeeded: {$succeeded}, Failed: {$failed}.";
+                if ($failed > 0) {
+                    $message .= " Some orders could not be fulfilled.";
+                }
+
+                $flashType = $failed === count($bulkOrders) ? 'error' : 'success';
+                return redirect()->route('agent.dashboard')->with($flashType, $message);
+            }
+
+            // ============================
+            // SINGLE PURCHASE CALLBACK
+            // ============================
             $productId = $transaction->product_id;
             $product = Product::find($productId);
 
@@ -559,10 +701,8 @@ class AgentPurchaseController extends Controller
                 $walletService
             );
             
-            // 🛑 NEW: Check for vendor error message after fulfillment (for card purchases)
+            // Check for vendor error message after fulfillment (for card purchases)
             if (isset($order->vendor_error_message)) {
-                // Since payment was successful via Paystack, the user will be refunded manually or funds go to wallet
-                // For now, we only alert the user on the dashboard.
                 return redirect()->route('agent.dashboard')->with('error', 'Payment successful but fulfillment failed: ' . $order->vendor_error_message);
             }
 

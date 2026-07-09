@@ -36,26 +36,23 @@ class WithdrawalRequestController extends Controller
         }
 
         DB::transaction(function () use ($wr) {
-            $wallet = $wr->wallet;
-            if ($wallet->balance < $wr->amount) {
-                abort(400, 'Insufficient balance');
-            }
-
-            $wallet->decrement('balance', $wr->amount);
+            $wallet = $wr->wallet ?? ($wr->user ? $wr->user->wallet : null);
 
             $wr->update([
                 'status' => WithdrawalRequest::STATUS_APPROVED,
                 'processed_by' => Auth::id(),
             ]);
 
-            WalletTransaction::create([
-                'wallet_id' => $wallet->id,
-                'admin_id' => Auth::id(),
-                'type' => 'debit',
-                'amount' => $wr->amount,
-                'reason' => 'Withdrawal approved - #' . $wr->id,
-                'withdrawal_request_id' => $wr->id,
-            ]);
+            if ($wallet) {
+                WalletTransaction::create([
+                    'wallet_id' => $wallet->id,
+                    'admin_id' => Auth::id(),
+                    'type' => 'debit',
+                    'amount' => $wr->amount,
+                    'reason' => 'Withdrawal approved - #' . $wr->id,
+                    'withdrawal_request_id' => $wr->id,
+                ]);
+            }
         });
 
         return response()->json(['message' => 'Withdrawal approved']);
@@ -71,11 +68,18 @@ class WithdrawalRequestController extends Controller
             return response()->json(['error' => 'Already processed'], 400);
         }
 
-        $wr->update([
-            'status' => WithdrawalRequest::STATUS_DECLINED,
-            'decline_reason' => $request->decline_reason,
-            'processed_by' => Auth::id(),
-        ]);
+        DB::transaction(function () use ($wr, $request) {
+            $wr->update([
+                'status' => WithdrawalRequest::STATUS_DECLINED,
+                'decline_reason' => $request->decline_reason,
+                'processed_by' => Auth::id(),
+            ]);
+
+            $wallet = $wr->wallet ?? ($wr->user ? $wr->user->wallet : null);
+            if ($wallet) {
+                $wallet->increment('total_commissions', $wr->amount);
+            }
+        });
 
         return response()->json(['message' => 'Withdrawal declined']);
     }

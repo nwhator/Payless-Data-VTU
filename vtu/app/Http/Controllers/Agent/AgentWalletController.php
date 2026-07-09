@@ -117,9 +117,7 @@ if (!$wallet || $wallet->total_commissions < $amount) {
                 // 2. Create the Withdrawal Request
                 $withdrawalRequest = WithdrawalRequest::create([
                     'user_id' => $agent->id,
-                    // If you received the previous error (wallet_id is missing), you need to ensure it's added here. 
-                    // Assuming for now the old structure worked:
-                    // 'wallet_id' => $agent->commissionWallet->id, // Uncomment/add if needed
+                    'wallet_id' => $wallet->id,
                     'amount' => $amount,
                     'payout_method' => $validated['processor'],
                     'account_details' => $validated['account_details'],

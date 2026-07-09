@@ -79,26 +79,38 @@ class IDataService
 
     public function normalizeNetworkForSupplier(?string $network): string
     {
-        return match (strtolower(trim((string) $network))) {
-            'mtn' => 'mtn',
-            'telecel', 'telcel' => 'telecel',
-            'airteltigo', 'airtel' => 'airteltigo',
-            'glo' => 'glo',
-            'vodafone' => 'vodafone',
-            default => strtolower(trim((string) $network)),
-        };
+        $net = strtolower(trim((string) $network));
+        if (str_contains($net, 'mtn')) {
+            return 'mtn';
+        }
+        if (str_contains($net, 'telecel') || str_contains($net, 'vodafone') || str_contains($net, 'telcel')) {
+            return 'telecel';
+        }
+        if (str_contains($net, 'airtel') || str_contains($net, 'tigo') || str_contains($net, 'airteltigo')) {
+            return 'airteltigo';
+        }
+        if (str_contains($net, 'glo')) {
+            return 'glo';
+        }
+        return $net;
     }
 
     public function normalizeNetworkForProduct(?string $network): string
     {
-        return match (strtolower(trim((string) $network))) {
-            'mtn' => 'MTN',
-            'telecel', 'telcel' => 'Telcel',
-            'airteltigo', 'airtel' => 'Airtel',
-            'glo' => 'Glo',
-            'vodafone' => 'Vodafone',
-            default => trim((string) $network),
-        };
+        $net = strtolower(trim((string) $network));
+        if (str_contains($net, 'mtn')) {
+            return 'MTN';
+        }
+        if (str_contains($net, 'telecel') || str_contains($net, 'vodafone') || str_contains($net, 'telcel')) {
+            return 'Telcel';
+        }
+        if (str_contains($net, 'airtel') || str_contains($net, 'tigo') || str_contains($net, 'airteltigo')) {
+            return 'Airtel';
+        }
+        if (str_contains($net, 'glo')) {
+            return 'Glo';
+        }
+        return trim((string) $network);
     }
 
     public function packageValue(Product $product): int|float|string

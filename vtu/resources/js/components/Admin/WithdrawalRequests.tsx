@@ -4,26 +4,29 @@ import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 // ✅ Paystack Fund Button Component
-const FundWalletButton: React.FC<{ email: string; amount: number }> = ({ email, amount }) => {
+const FundWalletButton: React.FC<{ userId: number; email: string; amount: number }> = ({ userId, email, amount }) => {
   const [loading, setLoading] = useState(false)
 
   const handleFund = async (): Promise<void> => {
     setLoading(true)
-    toast.loading("Redirecting to Paystack...", { id: "paystack" })
+    toast.loading("Processing wallet funding...", { id: "fund-wallet" })
 
     try {
-      const response = await axios.post("/paystack/initialize", { email, amount })
-      const authUrl: string | undefined = response.data?.data?.authorization_url
+      const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ""
+      const response = await axios.post("/admin/wallet/update", {
+        user_id: userId,
+        amount,
+        action: "fund",
+      }, {
+        headers: { "X-CSRF-TOKEN": csrfToken }
+      })
 
-      if (authUrl) {
-        toast.dismiss("paystack")
-        window.location.href = authUrl
-      } else {
-        toast.error("Unable to initialize Paystack payment")
-      }
+      toast.dismiss("fund-wallet")
+      toast.success(response.data?.message || "Wallet funded successfully!")
     } catch (error: unknown) {
-      const err = error as AxiosError<{ message?: string }>
-      toast.error(err.response?.data?.message ?? "Something went wrong initializing payment")
+      toast.dismiss("fund-wallet")
+      const err = error as AxiosError<{ message?: string; error?: string }>
+      toast.error(err.response?.data?.error || err.response?.data?.message || "Something went wrong funding wallet")
     } finally {
       setLoading(false)
     }
@@ -150,7 +153,7 @@ const WithdrawalRequests: React.FC = () => {
                 <td>
                   {r.status === "pending" ? (
                     <div className="flex gap-2">
-                      <FundWalletButton email={r.user.email} amount={r.amount} />
+                      <FundWalletButton userId={r.user.id} email={r.user.email} amount={r.amount} />
                       <button
                         onClick={() => declineRequest(r.id)}
                         disabled={processingId === r.id}

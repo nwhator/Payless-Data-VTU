@@ -14,7 +14,8 @@ class WalletTransaction extends Model
         'admin_id',
         'type',
         'amount',
-        'reason'
+        'reason',
+        'withdrawal_request_id'
     ];
 
     public function wallet() {
