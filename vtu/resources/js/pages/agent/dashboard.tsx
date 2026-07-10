@@ -135,7 +135,7 @@ const Dashboard: React.FC = () => {
                     }`}
                 />
 
-                <div className="flex-1 lg:ml-64 transition-all duration-300">
+                <div className="flex-1 min-w-0 lg:ml-64 transition-all duration-300">
                     <Navbar active={active} setActive={handleSetActive} onMenuClick={() => setSidebarOpen((s) => !s)} />
 
                     <main className="p-4 sm:p-6">

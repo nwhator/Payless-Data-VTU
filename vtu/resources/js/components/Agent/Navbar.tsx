@@ -69,16 +69,16 @@ export default function Navbar({ active, setActive, onMenuClick }: NavbarProps) 
     <nav className="sticky top-0 z-40 flex items-center justify-between w-full px-4 sm:px-6 py-3 bg-[#001A23] border-b border-white/10 shadow-lg">
       
       {/* Left section */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Hamburger for mobile */}
         <button
           onClick={onMenuClick}
-          className="lg:hidden text-gray-300 hover:text-white transition"
+          className="lg:hidden shrink-0 text-gray-300 hover:text-white transition"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <div className="text-gray-300 text-sm sm:text-base">
+        <div className="text-gray-300 text-sm sm:text-base truncate min-w-0">
           Hello, <span className="font-semibold text-white">{agent?.name || "Agent User"}</span>
         </div>
       </div>
@@ -89,10 +89,9 @@ export default function Navbar({ active, setActive, onMenuClick }: NavbarProps) 
       </div>
 
       {/* Right section */}
-      {/* 💡 FIX 3: Use ref and onClick toggle */}
       <div
-        ref={dropdownRef} // Attach the ref here
-        className="relative flex items-center gap-2 cursor-pointer"
+        ref={dropdownRef}
+        className="flex items-center gap-2 sm:gap-5 shrink-0 relative cursor-pointer"
         onClick={() => setDropdownOpen((prev) => !prev)} // Toggle state on click
         // Remove onMouseEnter/onMouseLeave completely, or scope them to large screens if needed for desktop hover
         onMouseEnter={() => window.innerWidth > 1024 && setDropdownOpen(true)}

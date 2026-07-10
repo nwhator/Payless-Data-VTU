@@ -71,7 +71,7 @@ const AdminDashboard: React.FC = () => {
         }`}
       />
 
-      <div className="flex-1 lg:ml-64 transition-all duration-300">
+      <div className="flex-1 min-w-0 lg:ml-64 transition-all duration-300">
         <Navbar
           active={active}
           setActive={setActive}

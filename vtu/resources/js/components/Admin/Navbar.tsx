@@ -71,16 +71,16 @@ export default function Navbar({ active, setActive, onMenuClick }: NavbarProps) 
     <nav className="sticky top-0 z-40 flex items-center justify-between w-full px-4 sm:px-6 py-3 bg-[#001A23] border-b border-white/10 shadow-lg">
       
       {/* Left section */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Hamburger on mobile only */}
         <button
           onClick={onMenuClick}
-          className="lg:hidden text-gray-300 hover:text-white transition"
+          className="lg:hidden shrink-0 text-gray-300 hover:text-white transition"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <div className="text-gray-300 text-sm sm:text-base">
+        <div className="text-gray-300 text-sm sm:text-base truncate min-w-0">
           Hello, <span className="font-semibold text-white">{admin?.name || "Admin Root"}</span>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function Navbar({ active, setActive, onMenuClick }: NavbarProps) 
       </div>
 
       {/* Right Section (Profile/Notifications) */}
-      <div className="flex items-center gap-5 relative">
+      <div className="flex items-center gap-2 sm:gap-5 shrink-0 relative">
         <div className="relative cursor-pointer">
           <Bell className="w-5 h-5 text-gray-300 hover:text-white transition" />
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
