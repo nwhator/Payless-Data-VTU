@@ -54,6 +54,7 @@ class PaystackAgentsController extends Controller
         [
             'is_agent_topup' => true,
             'agent_id'       => $agent->id,
+            'original_amount' => $amountCedis,
             'fee_applied'    => true,
             'fee_percentage' => $paymentBreakdown['percentage'],
             'fee_amount'     => $paymentBreakdown['fee'],

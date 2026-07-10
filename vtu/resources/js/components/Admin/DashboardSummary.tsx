@@ -105,8 +105,7 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({ setActive }) => {
         <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            // FIX: Tailwind classes added for screen optimization (w-full and overflow-x-hidden)
-            className="space-y-8 w-full overflow-x-hidden"
+            className="space-y-8 w-full"
         >
             <h2 className="text-3xl font-bold">System Overview</h2>
 

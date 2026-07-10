@@ -1,8 +1,8 @@
 import { useForm, usePage } from "@inertiajs/react"
 import type { SharedData } from "@/types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Save, Loader2 } from "lucide-react"
+import { Save, Loader2, Menu } from "lucide-react"
 import { toast } from "sonner"
 import Sidebar from "@/components/Admin/Sidebar"
 import Navbar from "@/components/Admin/Navbar"
@@ -20,6 +20,12 @@ export default function Profile() {
 
   const [success, setSuccess] = useState(false)
   const [active, setActive] = useState("Profile")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? "hidden" : ""
+    return () => { document.body.style.overflow = "" }
+  }, [sidebarOpen])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,14 +46,34 @@ export default function Profile() {
   }
 
   return (
-    <div className="flex h-screen bg-[#001A23] text-white overflow-hidden">
+    <div className="min-h-screen bg-[#001A23] text-white flex relative">
       {/* Sidebar */}
-      <Sidebar active={active} setActive={setActive} />
+      <Sidebar
+        active={active}
+        setActive={(k) => { setActive(k); setSidebarOpen(false) }}
+        mobileOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div
+        onClick={() => setSidebarOpen(false)}
+        className={`fixed inset-0 z-20 lg:hidden bg-black/40 transition-opacity ${
+          sidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setSidebarOpen((s) => !s)}
+          className="lg:hidden fixed top-4 left-4 z-30 p-2 rounded-md bg-[#002C3A] text-gray-300 hover:text-white transition"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         {/* Navbar */}
-        <Navbar active={active} setActive={setActive} />
+        <Navbar active={active} setActive={setActive} onMenuClick={() => setSidebarOpen((s) => !s)} />
 
         {/* Profile Form */}
         <motion.div

@@ -150,7 +150,7 @@ const TransactionsTable: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-900/50 shadow-2xl">
+      <div className="overflow-x-auto rounded-xl border border-slate-700/50 bg-slate-900/50 shadow-2xl">
         {loading ? (
           <div className="flex h-64 items-center justify-center text-white/70">
             <Loader2 className="mr-2 h-8 w-8 animate-spin" />

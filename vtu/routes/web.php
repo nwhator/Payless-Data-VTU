@@ -86,7 +86,11 @@ Route::post('/login/modal', [ModalRegisterController::class, 'login'])
 Route::post('/paystack/initialize', [PaystackController::class, 'initialize'])->name('paystack.initialize');
 Route::get('/paystack/callback', [PaystackController::class, 'callback'])->name('paystack.purchase.callback');
 Route::get('/payment/success', function () {
-    return Inertia::render('payment/success');
+    return Inertia::render('payment/success', [
+        'store_slug' => session('store_slug'),
+        'store_name' => session('store_name'),
+        'message' => session('message'),
+    ]);
 })->name('payment.success');
 Route::post('/paystack/main-initialize', [PaystackController::class, 'initializeMainPurchase'])->middleware('auth')->name('paystack.guest.initialize');
 Route::get('/paystack/main-callback', [PaystackController::class, 'mainPurchaseCallback'])->name('paystack.main.callback');
@@ -116,7 +120,11 @@ Route::get('/purchase/success', [UserController::class, 'purchaseSuccess'])->mid
 Route::get('/purchase/failed', [UserController::class, 'purchaseFailed'])->middleware('auth')->name('purchase.failed');
 
 Route::get('/payment/failed', function () {
-    return Inertia::render('payment/failed');
+    return Inertia::render('payment/failed', [
+        'store_slug' => session('store_slug'),
+        'store_name' => session('store_name'),
+        'error' => session('error'),
+    ]);
 })->name('payment.failed');
 
 // The public callback route (already confirmed as correct):

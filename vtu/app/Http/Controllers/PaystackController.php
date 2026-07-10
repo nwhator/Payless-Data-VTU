@@ -379,7 +379,17 @@ class PaystackController extends Controller
                     $request->ip(),
                     $request->userAgent()
                 );
-    
+
+                if ($order->status === 'failed') {
+                    $vendorMessage = $order->vendor_response['message'] ?? 'Order fulfillment failed. Funds have been returned to your wallet.';
+                    return response()->json([
+                        'success' => false,
+                        'status' => 'wallet_fulfillment_failed',
+                        'message' => $vendorMessage,
+                        'order_id' => $order->id,
+                    ], 400);
+                }
+
                 return response()->json([
                     'success' => true,
                     'status' => 'wallet_success', 
