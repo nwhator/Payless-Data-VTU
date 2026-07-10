@@ -46,7 +46,9 @@ const AgentWalletFunding: React.FC = () => {
       setLoadingBalance(true);
       const res = await axios.get("/wallet/stats");
       if (res.data) {
-        if (typeof res.data.balance === "number") setBalance(res.data.balance);
+        if (typeof res.data.current_balance === "number") setBalance(res.data.current_balance);
+        else if (typeof res.data.balance === "number") setBalance(res.data.balance);
+        
         if (res.data.email) setForm((prev) => ({ ...prev, email: res.data.email }));
       }
     } catch {

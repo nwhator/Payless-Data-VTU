@@ -142,11 +142,13 @@ class PaystackFundController extends Controller
                  ]); 
         }
 
-        // 2. Update local transaction status
+        // 2. Update local transaction status (record the actual funding amount, not including fee)
+        $fundingAmount = $meta['original_amount'] ?? $amount;
+        
         TransactionService::update($transaction, [
             'type' => 'top-up',
             'status' => $newStatus,
-            'amount' => $amount,
+            'amount' => $fundingAmount,
         ]);
 
         // 3. Handle Success
@@ -156,19 +158,16 @@ class PaystackFundController extends Controller
             if ($customer) {
                 try {
                     // Use the WalletService for crediting
-                    $this->walletService->credit($customer, $amount, 'Wallet Top-up via Paystack', $transaction->id);
-                    Log::info("Customer Wallet Top-up Success: User {$customer->id} credited {$amount}");
+                    $this->walletService->credit($customer, $fundingAmount, 'Wallet Top-up via Paystack', $transaction->id);
+                    Log::info("Customer Wallet Top-up Success: User {$customer->id} credited {$fundingAmount}");
 
-                    $successMessage = "Wallet successfully funded with GHS {$amount}. You can now purchase data instantly.";
-
-                    // 🎯 FIX: Redirect with query parameters for React frontend
+                    $successMessage = "Wallet successfully funded with GHS {$fundingAmount}.";
                     return redirect()
                         ->route('customer.dashboard', [
                             'status' => 'success',
                             'message' => urlencode($successMessage)
                         ]);
-
-                } catch (\Throwable $e) {
+                } catch (\Exception $e) {
                     Log::error("Wallet crediting failed for customer {$customer->id}", ['error' => $e->getMessage()]);
                     $errorMessage = 'Payment successful, but crediting wallet failed. Please contact support.';
                     // 🎯 FIX: Redirect with query parameters

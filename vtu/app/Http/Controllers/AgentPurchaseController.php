@@ -741,7 +741,11 @@ class AgentPurchaseController extends Controller
     ): Order {
         // Determine the reference based on source (wallet uses internal ref, paystack uses paystack_ref)
         $reference = $transaction->paystack_ref ?? $transaction->reference;
-        $amount = (float) $transaction->amount;
+        
+        // Use the product's agent price for the order amount, 
+        // because the transaction amount might be the total for a bulk purchase
+        $amount = (float) $product->agent_price;
+        
         $orderSource = $transaction->meta['source_type'] ?? 'agent_unknown';
 
         Log::info('Fulfilling agent order START', [

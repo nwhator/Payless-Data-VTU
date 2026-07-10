@@ -151,11 +151,13 @@ class PaystackAgentsController extends Controller
              return redirect()->route('home')->with('error', 'Invalid transaction type for this callback.'); 
         }
 
-        // 3. Update local transaction status
+        // 3. Update local transaction status (record the actual funding amount, not including fee)
+        $fundingAmount = $meta['original_amount'] ?? $amount;
+        
         TransactionService::update($transaction, [
             'type' => 'top-up',
             'status' => $newStatus,
-            'amount' => $amount,
+            'amount' => $fundingAmount,
         ]);
 
         // 4. Handle Success
@@ -165,18 +167,18 @@ class PaystackAgentsController extends Controller
             
             if ($agent) {
                 // Perform the wallet update inside a transaction for safety
-                DB::transaction(function () use ($agent, $amount) {
+                DB::transaction(function () use ($agent, $fundingAmount) {
                     $wallet = $agent->wallet()->first();
                     if ($wallet) {
-                        $wallet->increment('balance', $amount);
-                        Log::info("Agent Wallet Top-up Success: Agent {$agent->id} credited {$amount}");
+                        $wallet->increment('balance', $fundingAmount);
+                        Log::info("Agent Wallet Top-up Success: Agent {$agent->id} credited {$fundingAmount}");
                     } else {
                         Log::error("Wallet object missing during agent top-up for agent {$agent->id}");
                     }
                 });
 
                 // Correctly redirects back to the *authenticated agent's* dashboard
-                return redirect()->route('agent.dashboard')->with('success', "Wallet successfully funded with GHS {$amount}.");
+                return redirect()->route('agent.dashboard')->with('success', "Wallet successfully funded with GHS {$fundingAmount}.");
             }
             
             Log::error('Top-up succeeded but agent not found for crediting.', ['reference' => $reference]);
