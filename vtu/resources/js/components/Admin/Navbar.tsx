@@ -68,7 +68,7 @@ export default function Navbar({ active, setActive, onMenuClick }: NavbarProps) 
 
 
   return (
-    <nav className="sticky top-0 z-40 flex items-center justify-between w-full px-6 py-3 bg-[#001A23] border-b border-white/10 shadow-lg">
+    <nav className="sticky top-0 z-40 flex items-center justify-between w-full px-4 sm:px-6 py-3 bg-[#001A23] border-b border-white/10 shadow-lg">
       
       {/* Left section */}
       <div className="flex items-center gap-3">

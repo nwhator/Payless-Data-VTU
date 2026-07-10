@@ -574,31 +574,29 @@ const AgentSummary: React.FC<AgentSummaryProps> = ({ setActive }) => {
 
             {/* Store Banner */}
             {!storeExists ? (
-                <div className="bg-green-700/80 p-6 rounded-xl flex items-center justify-between shadow-lg">
-                    {/* ... (Existing Store Banner UI for Create Now) */}
+                <div className="bg-green-700/80 p-4 sm:p-6 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
                     <div>
-                        <h3 className="text-2xl font-bold">Create Your Store</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold">Create Your Store</h3>
                         <p className="text-sm text-green-100">
                             Personalize your link and share with customers.
                         </p>
                     </div>
                     <button
                         onClick={() => setActive("store")}
-                        className="bg-white text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition"
+                        className="w-full sm:w-auto bg-white text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition text-center"
                     >
                         Create Now
                     </button>
                 </div>
             ) : (
-                <div className="bg-green-700/80 p-6 rounded-xl flex items-center justify-between shadow-lg">
-                    {/* ... (Existing Store Banner UI for Share Now) */}
+                <div className="bg-green-700/80 p-4 sm:p-6 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
                     <div>
-                        <h3 className="text-2xl font-bold">Share Your Store</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold">Share Your Store</h3>
                         <p className="text-sm text-green-100">Secure and customizable store URL</p>
                     </div>
                     <button
                         onClick={() => setShowShareModal(true)}
-                        className="bg-white text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition"
+                        className="w-full sm:w-auto bg-white text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-50 transition text-center"
                     >
                         Share Now
                     </button>
@@ -678,23 +676,20 @@ const AgentSummary: React.FC<AgentSummaryProps> = ({ setActive }) => {
                 href="https://chat.whatsapp.com/IiGozrWafyO5yof3abVyP6?mode=wwt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-between p-4 rounded-lg bg-green-500/20 border border-green-400/50 hover:bg-green-500/30 transition-all duration-300 group shadow-lg"
+                className="w-full flex items-center gap-3 p-4 rounded-lg bg-green-500/20 border border-green-400/50 hover:bg-green-500/30 transition-all duration-300 group shadow-lg"
             >
-                <div className="flex items-center">
-                {/* WhatsApp Icon */}
-                    <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        viewBox="0 0 448 512" 
-                        className="w-6 h-6 mr-3 text-green-400" 
-                        fill="currentColor"
-                    >
-                        <path d="M380.9 97.1C339.4 55.4 283.4 32 224 32C128.1 32 49.6 109.9 49.6 205.9c0 37.1 11.4 72.8 33.1 103.1L32 447.9l112.5-29.6c27.1 14.8 57.7 22.6 88.5 22.6h.1c95.9 0 174.5-77.6 174.5-173.6c0-48.4-19.6-94.2-56-130.6zM224 415.9c-28.5 0-57.1-7.8-82.5-22.6l-1.8-1l-18.7 5l5.1-18.2l-1.1-1.8c-21.7-30.3-33.1-66-33.1-103.1c0-79 63.5-143.2 142.3-143.2s142.3 64.2 142.3 143.2c0 78.9-63.5 143.2-142.3 143.2zm61.2-110.1c-3.7-1.8-22-10.9-25.4-12.1s-5.9-1.8-8.5 1.8c-2.6 3.7-9.8 12.1-12 14.6s-4.5 2.7-8.2 1.2c-3.7-1.5-15.6-5.8-29.6-18.2c-10.9-9.7-18.2-24.3-20.4-28c-2.2-3.7-.2-5.7 1.6-7.5s3.7-4.5 5.5-6.7c1.8-2.2 2.5-4.1 3.7-6.2s.6-4.1-.2-5.7c-1.8-1.5-8.2-19.6-11.2-26.9c-3-7.3-6.2-6.4-8.5-6.4s-4.5-.2-6.9-.2c-2.4-.2-6.2.8-9.5 4.5s-12.1 12-12.1 29.3c0 17.3 12.4 33.9 14.2 36.6s24.4 37.5 59.2 52.8c34.8 15.3 43.7 12.3 49 11.5s17-4.1 19.4-8c2.4-3.9 2.4-7.3 1.7-8.5c-.8-1.2-3.1-1.8-6.9-3.7z"/>
-                    </svg>
-                    <span className="font-semibold text-white">
-                        Agent Support: Join Our Official WhatsApp Community
-                    </span>
-                </div>
-                    <ChevronRight className="w-5 h-5 text-green-400 group-hover:translate-x-1 transition" />
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 448 512" 
+                    className="w-6 h-6 shrink-0 text-green-400" 
+                    fill="currentColor"
+                >
+                    <path d="M380.9 97.1C339.4 55.4 283.4 32 224 32C128.1 32 49.6 109.9 49.6 205.9c0 37.1 11.4 72.8 33.1 103.1L32 447.9l112.5-29.6c27.1 14.8 57.7 22.6 88.5 22.6h.1c95.9 0 174.5-77.6 174.5-173.6c0-48.4-19.6-94.2-56-130.6zM224 415.9c-28.5 0-57.1-7.8-82.5-22.6l-1.8-1l-18.7 5l5.1-18.2l-1.1-1.8c-21.7-30.3-33.1-66-33.1-103.1c0-79 63.5-143.2 142.3-143.2s142.3 64.2 142.3 143.2c0 78.9-63.5 143.2-142.3 143.2zm61.2-110.1c-3.7-1.8-22-10.9-25.4-12.1s-5.9-1.8-8.5 1.8c-2.6 3.7-9.8 12.1-12 14.6s-4.5 2.7-8.2 1.2c-3.7-1.5-15.6-5.8-29.6-18.2c-10.9-9.7-18.2-24.3-20.4-28c-2.2-3.7-.2-5.7 1.6-7.5s3.7-4.5 5.5-6.7c1.8-2.2 2.5-4.1 3.7-6.2s.6-4.1-.2-5.7c-1.8-1.5-8.2-19.6-11.2-26.9c-3-7.3-6.2-6.4-8.5-6.4s-4.5-.2-6.9-.2c-2.4-.2-6.2.8-9.5 4.5s-12.1 12-12.1 29.3c0 17.3 12.4 33.9 14.2 36.6s24.4 37.5 59.2 52.8c34.8 15.3 43.7 12.3 49 11.5s17-4.1 19.4-8c2.4-3.9 2.4-7.3 1.7-8.5c-.8-1.2-3.1-1.8-6.9-3.7z"/>
+                </svg>
+                <span className="font-semibold text-white text-sm sm:text-base flex-1">
+                    Join Our Official WhatsApp Community
+                </span>
+                <ChevronRight className="w-5 h-5 shrink-0 text-green-400 group-hover:translate-x-1 transition" />
             </a>
             {/* --- END NEW: WHATSAPP GROUP BANNER --- */}
 
