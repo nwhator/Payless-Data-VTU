@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import FundWalletForm from "../FundWalletForm"; // <-- Keep your original import path
+import FundWalletModalForm from "./FundWalletModalForm";
 
 /* -----------------------------
     Type Definitions
@@ -270,14 +270,10 @@ export default function CustomerSummary({
         isOpen={isFundModalOpen}
         onClose={() => setIsFundModalOpen(false)}
       >
-        <FundWalletForm
-          // CORRECTLY PASSING REQUIRED PROPS:
+        <FundWalletModalForm
           userId={user.id} 
           userEmail={user.email} 
-          upgradeFee={20}
-          upgradeStatus={user.upgrade_status}
-          userRole={user.role}
-          onSuccess={handleFundSuccess} // Pass the handler to close the modal
+          onSuccess={handleFundSuccess} 
         />
       </Modal>
     </div>
