@@ -423,6 +423,7 @@ className="mt-2 inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 tex
 )}
 </div>
 </div>
+</div>
 ))}
 </div>
 </div>
