@@ -88,7 +88,8 @@ class PurchaseController extends Controller
                     ['vendor_ref' => $localReference, 'order_id' => $order->id]
                 );
 
-                    if (!$res->successful() || !in_array(($vendorResponse['status'] ?? ''), ['success', 'completed'], true)) {
+                    $vendorSuccess = $vendorResponse['success'] ?? false;
+                    if (!$res->successful() || $vendorSuccess !== true) {
                     if ($buyer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
                         return response()->json(['status' => false, 'message' => 'iDATA purchase failed.'], 500);
@@ -207,7 +208,8 @@ class PurchaseController extends Controller
                     'vendor_ref' => $localReference,
                 ]);
 
-                    if (!$res->successful() || !in_array(($vendorResponse['status'] ?? ''), ['success', 'completed'], true)) {
+                    $vendorSuccess = $vendorResponse['success'] ?? false;
+                    if (!$res->successful() || $vendorSuccess !== true) {
                     if ($buyer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
                         return response()->json(['success' => false, 'message' => 'iDATA failed.'], 500);
