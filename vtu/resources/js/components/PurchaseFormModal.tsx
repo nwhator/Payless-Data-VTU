@@ -3,7 +3,7 @@ import type { Product, User } from "@/lib/types";
 import { X, Package, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-// Import axios for reliable request handling
+import { toast } from "sonner";
 import axios from 'axios'; 
 
 interface Props {
@@ -49,16 +49,22 @@ export default function PurchaseFormModal({ product, user, onClose }: Props) {
                 user_id: user!.id,
             });
 
-            const data = res.data; // Axios wraps the response data
+            const data = res.data;
+
+            if (data.status === 'wallet_success') {
+                toast.success(data.message || "Purchase successful! Processing data delivery...", { duration: 5000 });
+                onClose();
+                return;
+            }
 
             if (!data.authorization_url) {
-                // If the backend returned a non-2xx status, axios would have already thrown an error.
-                // This checks for successful data structure but missing redirect URL.
                 throw new Error(data.message || "Payment initialization failed: Missing authorization URL.");
             }
 
-            // Redirect the user to Paystack to complete the payment
-            window.location.href = data.authorization_url;
+            toast.info(data.message || "Redirecting to Paystack for payment...", { duration: 3000 });
+            setTimeout(() => {
+                window.location.href = data.authorization_url;
+            }, 1000);
 
         } catch (err: any) {
             // Axios error handling: Check for the 419 status explicitly
