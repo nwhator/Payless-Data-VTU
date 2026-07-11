@@ -172,6 +172,7 @@ class PaystackAgentsController extends Controller
                     $wallet = $agent->wallet()->first();
                     if ($wallet) {
                         $wallet->increment('balance', $fundingAmount);
+                        $agent->increment('wallet_balance', $fundingAmount);
                         Log::info("Agent Wallet Top-up Success: Agent {$agent->id} credited {$fundingAmount}");
                     } else {
                         Log::error("Wallet object missing during agent top-up for agent {$agent->id}");

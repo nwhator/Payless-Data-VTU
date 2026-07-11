@@ -70,11 +70,26 @@ class IDataService
 
     public function placeProductOrder(Product $product, string $beneficiary): Response
     {
+        $network = $product->network;
+        if (empty($network)) {
+            $network = $this->extractNetworkFromName($product->name);
+        }
+
         return $this->placeOrder(
-            $this->normalizeNetworkForSupplier($product->network ?? $product->category ?? ''),
+            $this->normalizeNetworkForSupplier($network),
             $beneficiary,
             $this->packageValue($product)
         );
+    }
+
+    protected function extractNetworkFromName(string $name): string
+    {
+        $lower = strtolower(trim($name));
+        if (str_contains($lower, 'mtn')) return 'MTN';
+        if (str_contains($lower, 'airtel') || str_contains($lower, 'tigo')) return 'AirtelTigo';
+        if (str_contains($lower, 'telecel') || str_contains($lower, 'vodafone') || str_contains($lower, 'telcel')) return 'Telecel';
+        if (str_contains($lower, 'glo')) return 'Glo';
+        return '';
     }
 
     public function normalizeNetworkForSupplier(?string $network): string

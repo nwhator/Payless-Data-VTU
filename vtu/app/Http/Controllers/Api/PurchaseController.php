@@ -46,13 +46,13 @@ class PurchaseController extends Controller
 
         $localReference = 'PAYLESSDATA_' . strtoupper(Str::random(10));
 
-        if ($buyer->role !== 'admin' && $payer->wallet_balance < $sellPrice) {
+        if ($payer->role !== 'admin' && $payer->wallet_balance < $sellPrice) {
             return response()->json(['status' => false, 'message' => 'Insufficient wallet balance.'], 400);
         }
 
         try {
             return DB::transaction(function () use ($buyer, $product, $validated, $payer, $sellPrice, $agent, $localReference) {
-                if ($buyer->role !== 'admin') {
+                if ($payer->role !== 'admin') {
                     $payer->decrement('wallet_balance', $sellPrice);
                 }
 
@@ -90,7 +90,7 @@ class PurchaseController extends Controller
 
                     $vendorSuccess = $vendorResponse['success'] ?? false;
                     if (!$res->successful() || $vendorSuccess !== true) {
-                    if ($buyer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
+                    if ($payer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
                         return response()->json(['status' => false, 'message' => 'iDATA purchase failed.'], 500);
                 }
