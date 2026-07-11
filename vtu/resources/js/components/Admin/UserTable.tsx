@@ -21,8 +21,8 @@ interface Props {
 
 const UserTable: React.FC<Props> = ({ users, setSelectedUser, columns, selectedTab }) => {
     return (
-        <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl shadow-lg w-full min-w-0">
-            <table className="w-full text-sm text-left table-auto text-slate-300">
+        <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl shadow-lg w-full min-w-0 overflow-x-auto">
+            <table className="w-full min-w-[550px] text-sm text-left table-auto text-slate-300">
                 <thead className="text-xs uppercase bg-slate-800/80 text-white">
                     <tr>
                         {columns.map((col, i) => (

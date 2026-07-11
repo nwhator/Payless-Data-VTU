@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { usePage, Head } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 // --- Interfaces ---
 interface Product {
   id: number;
+  name?: string;
   product_code: string;
   category: string;
   capacity: string;
@@ -22,6 +24,22 @@ interface Store {
   whatsapp_number?: string | null;
 }
 // ------------------------------------
+
+// --- Network grouping helpers ---
+const NETWORKS = [
+  { name: "MTN", keywords: ["mtn"] },
+  { name: "AirtelTigo", keywords: ["airtel", "tigo"] },
+  { name: "Telesol", keywords: ["telesol"] },
+]
+
+function extractNetwork(productName: string): string {
+  const lower = productName.toLowerCase()
+  for (const net of NETWORKS) {
+    if (net.keywords.some((k) => lower.includes(k))) return net.name
+  }
+  return "Other"
+}
+// -------------------------------
 
 // --- Phone Number Validation Function ---
 const isValidGhanaianPhoneNumber = (number: string): boolean => {
@@ -341,13 +359,24 @@ const PublicStore: React.FC = () => {
     }>().props;
   
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [openNetwork, setOpenNetwork] = useState<string | null>(null);
   
     const PRIMARY_ACCENT = "#FFCC00";
     const BACKGROUND_DARK = "#14141A";
     const CARD_BACKGROUND = "#1E1E24";
     const TEXT_LIGHT = "#E0E0E0";
     const TEXT_ACCENT = PRIMARY_ACCENT;
-    
+
+    const groupedProducts = useMemo(() => {
+      const groups: Record<string, Product[]> = {}
+      for (const p of products) {
+        const net = extractNetwork(p.name ?? p.category ?? "")
+        if (!groups[net]) groups[net] = []
+        groups[net].push(p)
+      }
+      return groups
+    }, [products])
+
     // Logic to find the cheapest available product for the dynamic meta description
     const cheapestProduct = useMemo(() => {
         const availableProducts = products.filter(p => p.price !== null);
@@ -503,57 +532,80 @@ const PublicStore: React.FC = () => {
               )}
   
               {products.length ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-                  {products.map((p) => (
-                    <motion.div
-                      key={p.id}
-                      onClick={() => handleProductClick(p)}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.05 * p.id }}
-                      variants={hoverEffect}
-                      whileHover="hover"
-                      whileTap="tap"
-                      className={`flex flex-col items-center p-6 rounded-2xl border transition-all duration-300 cursor-pointer text-center ${p.price === null ? "opacity-50 grayscale cursor-not-allowed" : "hover:border-yellow-600"}`}
-                      style={{ backgroundColor: CARD_BACKGROUND, color: TEXT_LIGHT, borderColor: p.price === null ? "#33333A" : "transparent" }}
-                    >
-                      {/* Capacity - Primary Focus */}
-                      <div
-                        className="text-5xl font-black mb-1"
-                        style={{ color: PRIMARY_ACCENT }}
+                <div className="space-y-4">
+                  {Object.entries(groupedProducts).map(([network, netProducts]) => (
+                    <div key={network} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                      <button
+                        onClick={() => setOpenNetwork(openNetwork === network ? null : network)}
+                        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-white/5"
                       >
-                        {p.capacity}
-                      </div>
-  
-                      {/* Bundle Type */}
-                      <p className="text-sm font-medium opacity-70 mb-3">
-                        MTN Data Bundle
-                      </p>
-                      
-                      {/* Validity Badge - Use primary color for highlight */}
-                      <span
-                        className="text-xs font-bold py-1 px-4 rounded-full uppercase tracking-wider"
-                        style={{ backgroundColor: "rgba(255, 204, 0, 0.2)", color: PRIMARY_ACCENT }}
-                      >
-                        {p.validity}
-                      </span>
-  
-                      {/* Price */}
-                      <div className="mt-4 pt-4 border-t w-full" style={{ borderColor: "#33333A" }}>
-                        <p className="text-xl font-bold" style={{ color: TEXT_LIGHT }}>
-                          {p.price !== null ? (
-                            <span>
-                              <span className="text-sm font-light opacity-80">₵</span>
-                              {p.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          ) : (
-                            "Unavailable"
-                          )}
-                        </p>
-                        <p className="text-xs opacity-60 mt-1">Price</p>
-                      </div>
-  
-                    </motion.div>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold"
+                            style={{ backgroundColor: `${PRIMARY_ACCENT}22`, color: PRIMARY_ACCENT }}
+                          >
+                            {network.charAt(0)}
+                          </div>
+                          <div>
+                            <span className="text-base sm:text-lg font-semibold text-white">{network}</span>
+                            <span className="ml-2 text-xs text-gray-400">({netProducts.length})</span>
+                          </div>
+                        </div>
+                        <ChevronDown
+                          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+                            openNetwork === network ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      <AnimatePresence>
+                        {openNetwork === network && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-5 pt-3 border-t border-white/10">
+                              {netProducts.map((p) => (
+                                <motion.div
+                                  key={p.id}
+                                  onClick={() => handleProductClick(p)}
+                                  variants={hoverEffect}
+                                  whileHover="hover"
+                                  whileTap="tap"
+                                  className={`flex flex-col items-center p-5 rounded-2xl border transition-all duration-300 cursor-pointer text-center ${p.price === null ? "opacity-50 grayscale cursor-not-allowed" : "hover:border-yellow-600"}`}
+                                  style={{ backgroundColor: CARD_BACKGROUND, color: TEXT_LIGHT, borderColor: p.price === null ? "#33333A" : "transparent" }}
+                                >
+                                  <div className="text-4xl font-black mb-1" style={{ color: PRIMARY_ACCENT }}>
+                                    {p.capacity}
+                                  </div>
+                                  <p className="text-sm font-medium opacity-70 mb-3">
+                                    {network} Data Bundle
+                                  </p>
+                                  <span
+                                    className="text-xs font-bold py-1 px-4 rounded-full uppercase tracking-wider"
+                                    style={{ backgroundColor: "rgba(255, 204, 0, 0.2)", color: PRIMARY_ACCENT }}
+                                  >
+                                    {p.validity}
+                                  </span>
+                                  <div className="mt-4 pt-4 border-t w-full" style={{ borderColor: "#33333A" }}>
+                                    <p className="text-lg font-bold" style={{ color: TEXT_LIGHT }}>
+                                      {p.price !== null ? (
+                                        <span>
+                                          <span className="text-sm font-light opacity-80">₵</span>
+                                          {p.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                      ) : "Unavailable"}
+                                    </p>
+                                    <p className="text-xs opacity-60 mt-1">Price</p>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   ))}
                 </div>
               ) : (

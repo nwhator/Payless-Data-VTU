@@ -112,7 +112,8 @@ const WithdrawalRequests: React.FC = () => {
       {requests.length === 0 ? (
         <div className="text-center text-slate-500 py-6">No withdrawal requests yet.</div>
       ) : (
-        <table className="w-full border-collapse">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px] border-collapse">
           <thead>
             <tr className="text-left text-slate-400 border-b border-white/10">
               <th className="py-2">Agent</th>
@@ -178,6 +179,7 @@ const WithdrawalRequests: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   )

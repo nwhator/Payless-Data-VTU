@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import FundWalletModalForm from "./FundWalletModalForm";
 
 /* -----------------------------
@@ -52,6 +53,21 @@ const CURRENCY_SIGN = "₵";
 /* -----------------------------
     Utility Components
 ------------------------------ */
+
+// --- Network grouping helpers ---
+const NETWORKS = [
+  { name: "MTN", keywords: ["mtn"] },
+  { name: "AirtelTigo", keywords: ["airtel", "tigo"] },
+  { name: "Telesol", keywords: ["telesol"] },
+]
+
+function extractNetwork(productName: string): string {
+  const lower = productName.toLowerCase()
+  for (const net of NETWORKS) {
+    if (net.keywords.some((k) => lower.includes(k))) return net.name
+  }
+  return "Other"
+}
 
 // Temporary Basic Modal Wrapper (replace with your actual modal component if you have one)
 const Modal: React.FC<{ isOpen: boolean; onClose: () => void; children: React.ReactNode }> = ({ isOpen, onClose, children }) => {
@@ -167,14 +183,22 @@ export default function CustomerSummary({
   onSetActive,
   onProductClick,
 }: Props) {
-    // State to control the visibility of the fund wallet modal
     const [isFundModalOpen, setIsFundModalOpen] = useState(false);
+    const [openNetwork, setOpenNetwork] = useState<string | null>(null);
 
-    // Callback to close the modal after a successful action (or redirection)
     const handleFundSuccess = () => {
         setIsFundModalOpen(false);
-        // Add logic here to show a toast/notification if needed before redirection
     };
+
+    const groupedProducts = useMemo(() => {
+      const groups: Record<string, Product[]> = {}
+      for (const p of products) {
+        const net = extractNetwork(p.name)
+        if (!groups[net]) groups[net] = []
+        groups[net].push(p)
+      }
+      return groups
+    }, [products])
 
   return (
     <div className="space-y-8">
@@ -241,29 +265,57 @@ export default function CustomerSummary({
         <h2 className="text-xl font-bold">Buy Data</h2>
       </div>
 
-      {/* PRODUCTS GRID */}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {loadingProducts ? (
-          <p className="col-span-full text-center text-slate-400">
-            Loading products...
-          </p>
-        ) : products.length === 0 ? (
-          <p className="col-span-full text-center text-slate-400">
-            No products available.
-          </p>
-        ) : (
-          products.map((product, index) => (
-            <motion.div
-              key={product.product_code ?? product.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.05 * index }}
-            >
-              <ProductCard product={product} onClick={() => onProductClick(product)} />
-            </motion.div>
-          ))
-        )}
-      </div>
+      {/* PRODUCTS (Grouped by Network) */}
+      {loadingProducts ? (
+        <p className="text-center text-slate-400">Loading products...</p>
+      ) : products.length === 0 ? (
+        <p className="text-center text-slate-400">No products available.</p>
+      ) : (
+        <div className="space-y-3">
+          {Object.entries(groupedProducts).map(([network, netProducts]) => (
+            <div key={network} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setOpenNetwork(openNetwork === network ? null : network)}
+                className="w-full flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors hover:bg-white/5"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                    style={{ backgroundColor: `${PRIMARY_ACCENT}22`, color: PRIMARY_ACCENT }}
+                  >
+                    {network.charAt(0)}
+                  </div>
+                  <div>
+                    <span className="text-sm sm:text-base font-semibold text-white">{network}</span>
+                    <span className="ml-2 text-xs text-slate-500">({netProducts.length})</span>
+                  </div>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform duration-200 ${
+                    openNetwork === network ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {openNetwork === network && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4 sm:p-5 pt-2 border-t border-white/10">
+                      {netProducts.map((p) => (
+                        <ProductCard key={p.product_code ?? p.id} product={p} onClick={() => onProductClick(p)} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* --- Fund Wallet Modal Integration --- */}
       <Modal
