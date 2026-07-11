@@ -65,7 +65,7 @@ class ProductProxyController extends Controller
 
     public function index()
     {
-        $products = Product::where('active', true)->get()->map(function ($p) {
+        $products = Product::query()->get()->map(function ($p) {
             $base = $p->price;
             $customerMargin = $p->customer_margin ?? ($base < 10 ? 1 : ($base < 20 ? 2 : ($base < 50 ? 4 : 6)));
             $agentMargin = $p->agent_margin ?? ($customerMargin * 0.8);
@@ -93,12 +93,26 @@ class ProductProxyController extends Controller
                 'customer_price' => $customerPrice,
                 'agent_price' => $agentPrice,
                 'profit' => $customerMargin,
+                'active' => $p->active,
             ];
         });
 
         return response()->json([
             'success' => true,
             'products' => $products,
+        ]);
+    }
+
+    public function toggleActive(Product $product)
+    {
+        $product->update([
+            'active' => !$product->active,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'active' => $product->fresh()->active,
+            'message' => $product->fresh()->active ? 'Product activated.' : 'Product deactivated.',
         ]);
     }
 

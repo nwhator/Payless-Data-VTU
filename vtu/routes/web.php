@@ -166,6 +166,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::post('/agent-requests/{id}/decline', [AgentUpgradeController::class, 'decline']);
 
     Route::post('/products/{product}/update-margin', [ProductProxyController::class, 'updateMargin'])->name('admin.products.updateMargin');
+    Route::post('/products/{product}/toggle-active', [ProductProxyController::class, 'toggleActive'])->name('admin.products.toggleActive');
 
     Route::post('/products/sync', [ProductProxyController::class, 'syncSupplierProducts'])->name('admin.products.sync');
     Route::get('/products', [ProductProxyController::class, 'index']);

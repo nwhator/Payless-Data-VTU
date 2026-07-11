@@ -12,6 +12,7 @@ agent_margin?:number|null
 customer_price?:number|null
 agent_price?:number|null
 profit?:number|null
+active?:boolean
 }
 type MarginRule={min:number;max:number;customer:number;agent:number}
 type MarginSetting=MarginRule[]
@@ -121,6 +122,38 @@ toast.error("❌ Error saving margin")
 setSavingId(null)
 }
 }
+const[togglingId,setTogglingId]=useState<number|null>(null)
+
+const toggleActive=async(id:number,current:boolean)=>{
+const csrfToken=getCookieToken();
+if(!csrfToken){
+toast.error("CSRF token missing. Please refresh the page.");
+return;
+}
+setTogglingId(id)
+try{
+const res=await fetch(`/admin/products/${id}/toggle-active`,{
+method:"POST",
+headers:{
+Accept:"application/json",
+"X-XSRF-TOKEN":csrfToken,
+},
+credentials:"same-origin",
+})
+const data=await res.json()
+if(data.success){
+setProducts(prev=>prev.map(p=>(p.id===id?{...p,active:data.active}:p)))
+toast.success(data.message||(current?"Product deactivated.":"Product activated."))
+}else{
+toast.error(data.message||"❌ Failed to toggle")
+}
+}catch{
+toast.error("⚠️ Network error toggling product")
+}finally{
+setTogglingId(null)
+}
+}
+
 const syncProducts=async()=>{
 setSyncing(true)
 const csrfToken=getCookieToken();
@@ -196,6 +229,7 @@ className="flex items-center justify-center gap-2 bg-emerald-600 px-4 py-2 round
 <th className="p-3">Customer Price</th>
 <th className="p-3">Agent Price</th>
 <th className="p-3">Profit</th>
+<th className="p-3 text-center">Active</th>
 <th className="p-3 text-center">Actions</th>
 </tr>
 </thead>
@@ -209,6 +243,21 @@ className="flex items-center justify-center gap-2 bg-emerald-600 px-4 py-2 round
 <td className="p-3 text-indigo-400">GHS {(p.agent_price??0).toFixed(2)}</td>
 <td className="p-3 text-green-400 font-semibold">
 +GHS {(p.profit??0).toFixed(2)}
+</td>
+<td className="p-3 text-center">
+<button
+onClick={()=>toggleActive(p.id,!!p.active)}
+disabled={togglingId===p.id}
+className={`relative inline-flex h-6 w-10 items-center rounded-full border border-white/10 transition disabled:opacity-50 ${
+p.active?"bg-emerald-600":"bg-slate-700"
+}`}
+>
+<span
+className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+p.active?"translate-x-5":"translate-x-1"
+}`}
+/>
+</button>
 </td>
 <td className="p-3 text-center">
 {editingId===p.id?(
@@ -301,7 +350,21 @@ className="bg-white/5 border border-white/10 rounded-xl p-4 shadow-md text-slate
 </span>
 </p>
 </div>
-<div className="mt-3 text-right">
+<div className="mt-3 flex items-center justify-between">
+<button
+onClick={()=>toggleActive(p.id,!!p.active)}
+disabled={togglingId===p.id}
+className={`relative inline-flex h-5 w-9 items-center rounded-full border border-white/10 transition disabled:opacity-50 ${
+p.active?"bg-emerald-600":"bg-slate-700"
+}`}
+>
+<span
+className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition ${
+p.active?"translate-x-[18px]":"translate-x-1"
+}`}
+/>
+</button>
+<div>
 {editingId===p.id?(
 <div className="flex flex-col sm:flex-row items-center gap-2">
 <input
