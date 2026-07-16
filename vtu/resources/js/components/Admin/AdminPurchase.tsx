@@ -169,7 +169,10 @@ const AdminPurchase: React.FC = () => {
 
       const data = await res.json()
 
-      if (data.success || data.status) {
+      if (data.authorization_url) {
+        toast.info(data.message || "Redirecting to Paystack...")
+        window.location.href = data.authorization_url
+      } else if (data.success || data.status) {
         toast.success(data.message || "✅ Purchase successful!")
         if (type === "customer") {
           setCustomerForm({ buyer_id: user.id.toString(), product_id: "", customer_phone: "" })

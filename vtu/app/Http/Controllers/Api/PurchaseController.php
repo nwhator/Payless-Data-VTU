@@ -15,6 +15,8 @@ use App\Models\User;
 use App\Models\Order;
 use App\Services\IDataService;
 use App\Services\TransactionService;
+use App\Services\PaystackFeeService;
+use App\Services\PaystackService;
 
 class PurchaseController extends Controller
 {
@@ -46,8 +48,60 @@ class PurchaseController extends Controller
 
         $localReference = 'PAYLESSDATA_' . strtoupper(Str::random(10));
 
+        // When payer has insufficient balance, route to Paystack so admin can pay by card
         if ($payer->role !== 'admin' && $payer->wallet_balance < $sellPrice) {
-            return response()->json(['status' => false, 'message' => 'Insufficient wallet balance.'], 400);
+            $paymentBreakdown = app(PaystackFeeService::class)->getPaymentBreakdown($sellPrice);
+            $totalWithFee = $paymentBreakdown['total'];
+
+            $transaction = TransactionService::record(
+                $buyer,
+                'payment',
+                $sellPrice,
+                "Admin purchase: {$product->name} for {$validated['customer_phone']}",
+                $product->id,
+                [
+                    'recipient_number' => $validated['customer_phone'],
+                    'buyer_id'         => $buyer->id,
+                    'agent_id'         => $agent?->id,
+                    'sell_price'       => $sellPrice,
+                    'source_type'      => 'admin_panel_paystack',
+                    'fee_applied'      => true,
+                    'fee_percentage'   => $paymentBreakdown['percentage'],
+                    'fee_amount'       => $paymentBreakdown['fee'],
+                    'total_with_fee'   => $totalWithFee,
+                ],
+                'initialized',
+                'GHS',
+                null,
+                $buyer->email
+            );
+
+            $paystackResponse = app(PaystackService::class)->initializeTransaction(
+                $buyer->email,
+                $totalWithFee,
+                [
+                    'transaction_id'  => $transaction->id,
+                    'product_id'      => $product->id,
+                    'user_id'         => $buyer->id,
+                    'original_amount' => $sellPrice,
+                    'fee_amount'      => $paymentBreakdown['fee'],
+                    'source'          => 'admin_panel_paystack',
+                ],
+                config('app.url') . '/paystack/main-callback'
+            );
+
+            $paystackRef = $paystackResponse['data']['reference'] ?? null;
+            TransactionService::update($transaction, [
+                'paystack_ref' => $paystackRef,
+                'status'       => 'initialized',
+            ]);
+
+            return response()->json([
+                'status'           => 'paystack_redirect',
+                'authorization_url' => $paystackResponse['data']['authorization_url'],
+                'reference'        => $paystackRef,
+                'message'          => "Insufficient balance. Redirecting to Paystack. A {$paymentBreakdown['percentage']}% fee (₵{$paymentBreakdown['fee']}) will be added.",
+            ]);
         }
 
         try {

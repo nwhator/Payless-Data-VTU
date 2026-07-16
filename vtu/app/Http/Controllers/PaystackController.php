@@ -557,6 +557,11 @@ class PaystackController extends Controller
         $recipientNumber = $meta['recipient_number'] ?? null;
         $greetingName = $customer->name ?? 'Customer';
         $productName = $product->name ?? 'Bundle';
+
+        // Determine redirect route based on source
+        $source = $meta['source'] ?? $meta['source_type'] ?? '';
+        $isAdminPurchase = $source === 'admin_panel_paystack';
+        $redirectRoute = $isAdminPurchase ? 'admin.dashboard' : 'customer.dashboard';
     
         // 3. Process Successful Payment (Order Fulfillment)
         if ($newStatus === 'success') {
@@ -564,9 +569,14 @@ class PaystackController extends Controller
                 if ($product && $customer && $recipientNumber) {
                     // 4. Call the reusable fulfillment method
                     $order = $this->fulfillOrder($transaction, $customer, $product, $recipientNumber, $walletService, $request->ip(), $request->userAgent());
+
+                    // For admin purchases, set agent_id on the order if applicable
+                    if ($isAdminPurchase && !empty($meta['agent_id'])) {
+                        $order->update(['agent_id' => $meta['agent_id']]);
+                    }
     
                     return redirect()
-                        ->route('customer.dashboard', [
+                        ->route($redirectRoute, [
                             'status' => 'success',
                             'message' => "Great news, {$greetingName}! Your purchase of {$productName} has been initiated. Check your dashboard for status updates.",
                         ]);
@@ -575,7 +585,7 @@ class PaystackController extends Controller
                 // Missing essential data
                 Log::error('Direct purchase fulfillment failed due to missing metadata', ['reference' => $reference, 'meta' => $meta]);
                 return redirect()
-                    ->route('customer.dashboard', [
+                    ->route($redirectRoute, [
                         'status' => 'error',
                         'message' => 'Payment verified, but required data was missing. Please contact support immediately.',
                     ]);
@@ -587,7 +597,7 @@ class PaystackController extends Controller
                 ]);
     
                 return redirect()
-                    ->route('customer.dashboard', [
+                    ->route($redirectRoute, [
                         'status' => 'error',
                         'message' => 'Payment verified, but data purchase failed due to an internal error. Funds are safe; check your dashboard or contact support.',
                     ]);
@@ -596,7 +606,7 @@ class PaystackController extends Controller
     
         // 7. Payment Not Successful Redirect
         return redirect()
-            ->route('customer.dashboard', [
+            ->route($redirectRoute, [
                 'status' => 'error',
                 'message' => 'Payment was not successful or was canceled. You have not been charged.',
             ]);
