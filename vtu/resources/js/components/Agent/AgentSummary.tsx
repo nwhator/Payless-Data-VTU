@@ -673,7 +673,7 @@ const AgentSummary: React.FC<AgentSummaryProps> = ({ setActive }) => {
             
             {/* --- NEW: WHATSAPP GROUP BANNER --- */}
             <a
-                href="https://chat.whatsapp.com/IiGozrWafyO5yof3abVyP6?mode=wwt"
+                href="https://chat.whatsapp.com/LUXbNXeS5r77Ga20bvhTWR"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center gap-3 p-4 rounded-lg bg-green-500/20 border border-green-400/50 hover:bg-green-500/30 transition-all duration-300 group shadow-lg"

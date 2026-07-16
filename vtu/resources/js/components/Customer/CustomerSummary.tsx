@@ -238,7 +238,7 @@ export default function CustomerSummary({
         
         {/* --- NEW: WHATSAPP GROUP CARD --- */}
         <a 
-          href="https://chat.whatsapp.com/IiGozrWafyO5yof3abVyP6?mode=wwt" 
+          href="https://chat.whatsapp.com/LUXbNXeS5r77Ga20bvhTWR" 
           target="_blank"
           rel="noopener noreferrer"
           className="p-4 bg-green-600/50 rounded-xl cursor-pointer hover:bg-green-600/70 transition group flex items-center justify-between"

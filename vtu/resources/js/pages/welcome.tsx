@@ -284,7 +284,7 @@ export default function Welcome() {
       
       {/* --- NEW: WHATSAPP FAB (Welcome Page) --- */}
         <motion.a
-          href="https://chat.whatsapp.com/IiGozrWafyO5yof3abVyP6?mode=wwt"
+          href="https://chat.whatsapp.com/LUXbNXeS5r77Ga20bvhTWR"
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-xl p-3 flex items-center group transition-all duration-300 w-12 hover:w-56 overflow-hidden"
