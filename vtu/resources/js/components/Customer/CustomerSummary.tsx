@@ -58,7 +58,7 @@ const CURRENCY_SIGN = "₵";
 const NETWORKS = [
   { name: "MTN", keywords: ["mtn"] },
   { name: "AirtelTigo", keywords: ["airtel", "tigo"] },
-  { name: "Telesol", keywords: ["telesol"] },
+  { name: "Telecel", keywords: ["telecel", "telcel", "telesol", "vodafone"] },
 ]
 
 function extractNetwork(productName: string): string {

@@ -651,27 +651,11 @@ class PaystackController extends Controller
         $res = app(IDataService::class)->placeProductOrder($product, $recipientNumber);
     
         $vendorResponse = $res->json();
-        
-        // CORRECT: Check success at the root level, not nested under 'data'
-        $vendorSuccess = $vendorResponse['success'] ?? false;
         $finalStatus = app(IDataService::class)->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
     
         // 3. Handle success vs failure
-        if ($vendorSuccess === true) {
-            // SUCCESS PATH
-            $order->update([
-                'status' => $finalStatus,
-                'vendor_response' => $vendorResponse,
-            ]);
-    
-            Log::info('Order fulfillment completed', [
-                'order_id' => $order->id,
-                'reference' => $reference,
-                'source' => $orderSource,
-                'vendor_status' => $finalStatus,
-                'vendor_response' => $vendorResponse,
-            ]);
-        } else {
+        // Trust HTTP 2xx; only fail if the vendor explicitly says "failed"
+        if (!$res->successful() || $finalStatus === 'failed') {
             // FAILURE PATH - Vendor API failed
             $order->update([
                 'status' => 'failed',
@@ -717,6 +701,20 @@ class PaystackController extends Controller
                     // Consider sending alert to admin here
                 }
             }
+        } else {
+            // SUCCESS PATH — order accepted (status may be 'processing' or 'completed')
+            $order->update([
+                'status' => $finalStatus,
+                'vendor_response' => $vendorResponse,
+            ]);
+    
+            Log::info('Order fulfillment completed', [
+                'order_id' => $order->id,
+                'reference' => $reference,
+                'source' => $orderSource,
+                'vendor_status' => $finalStatus,
+                'vendor_response' => $vendorResponse,
+            ]);
         }
         
         return $order;
