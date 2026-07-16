@@ -56,11 +56,11 @@ class PurchaseController extends Controller
                     $payer->decrement('wallet_balance', $sellPrice);
                 }
 
-                    $idataService = app(IDataService::class);
-                    $res = $idataService->placeProductOrder($product, $validated['customer_phone']);
+                $idataService = app(IDataService::class);
+                $res = $idataService->placeProductOrder($product, $validated['customer_phone']);
 
                 $vendorResponse = $res->json();
-                    $status = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
+                $status = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
 
                 $order = Order::create([
                     'user_id'         => $buyer->id,
@@ -88,10 +88,12 @@ class PurchaseController extends Controller
                     ['vendor_ref' => $localReference, 'order_id' => $order->id]
                 );
 
-                    if (!$res->successful() || $status === 'failed') {
+                if (!$res->successful() || $status === 'failed') {
                     if ($payer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
-                        return response()->json(['status' => false, 'message' => 'iDATA purchase failed.'], 500);
+                    $vendorMsg = $vendorResponse['message'] ?? $vendorResponse['error'] ?? 'iDATA purchase failed.';
+                    Log::error('Admin iDATA failure', ['product' => $product->name, 'vendor_response' => $vendorResponse]);
+                    return response()->json(['status' => false, 'message' => $vendorMsg], 500);
                 }
 
                 return response()->json([
@@ -102,7 +104,7 @@ class PurchaseController extends Controller
                 ]);
             });
         } catch (\Throwable $e) {
-            Log::error('Admin Purchase Error', ['error' => $e->getMessage()]);
+            Log::error('Admin Purchase Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['status' => false, 'message' => 'Error occurred.'], 500);
         }
     }
@@ -180,11 +182,11 @@ class PurchaseController extends Controller
             return DB::transaction(function () use ($buyer, $payer, $product, $validated, $agent, $sellPrice, $localReference) {
                 if ($buyer->role !== 'admin') $payer->decrement('wallet_balance', $sellPrice);
 
-                    $idataService = app(IDataService::class);
-                    $res = $idataService->placeProductOrder($product, $validated['recipient_number']);
+                $idataService = app(IDataService::class);
+                $res = $idataService->placeProductOrder($product, $validated['recipient_number']);
 
                 $vendorResponse = $res->json();
-                    $status = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
+                $status = $idataService->normalizeOrderStatus($vendorResponse['order_status'] ?? $vendorResponse['status'] ?? 'processing');
 
                 $order = Order::create([
                     'user_id' => $buyer->id,
@@ -207,10 +209,12 @@ class PurchaseController extends Controller
                     'vendor_ref' => $localReference,
                 ]);
 
-                    if (!$res->successful() || $status === 'failed') {
+                if (!$res->successful() || $status === 'failed') {
                     if ($buyer->role !== 'admin') $payer->increment('wallet_balance', $sellPrice);
                     $order->update(['status' => 'failed']);
-                        return response()->json(['success' => false, 'message' => 'iDATA failed.'], 500);
+                    $vendorMsg = $vendorResponse['message'] ?? $vendorResponse['error'] ?? 'iDATA failed.';
+                    Log::error('iDATA failure', ['product' => $product->name, 'vendor_response' => $vendorResponse]);
+                    return response()->json(['success' => false, 'message' => $vendorMsg], 500);
                 }
 
                 return response()->json([
@@ -221,8 +225,8 @@ class PurchaseController extends Controller
                 ]);
             });
         } catch (\Throwable $e) {
-            Log::error('iDATA Purchase Error', ['error' => $e->getMessage()]);
-                return response()->json(['success' => false, 'message' => 'Server error'], 500);
+            Log::error('iDATA Purchase Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'message' => 'Server error'], 500);
         }
     }
 
