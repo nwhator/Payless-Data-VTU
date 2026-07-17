@@ -1,6 +1,5 @@
 <?php
 
-// app/Models/WithdrawalRequest.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -10,12 +9,18 @@ class WithdrawalRequest extends Model
 {
     protected $fillable = [
         'user_id', 'wallet_id', 'amount', 'payout_method',
-        'note', 'status', 'processed_by', 'decline_reason'
+        'account_details', 'note', 'status', 'processed_by',
+        'decline_reason', 'completed_at',
     ];
 
-    // statuses can be: pending, approved, declined
+    protected $casts = [
+        'completed_at' => 'datetime',
+        'amount' => 'float',
+    ];
+
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';
+    public const STATUS_COMPLETED = 'completed';
     public const STATUS_DECLINED = 'declined';
 
     public function user(): BelongsTo
@@ -33,4 +38,3 @@ class WithdrawalRequest extends Model
         return $this->belongsTo(User::class, 'processed_by');
     }
 }
-
