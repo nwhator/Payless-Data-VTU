@@ -73,6 +73,10 @@ class WallettController extends Controller
             $wallet->balance = $newBalance;
             $wallet->save();
 
+            // Sync users.wallet_balance column used by purchase checks
+            $user->wallet_balance = $newBalance;
+            $user->save();
+
             WalletTransaction::create([
                 'wallet_id' => $wallet->id,
                 'admin_id' => Auth::id(),

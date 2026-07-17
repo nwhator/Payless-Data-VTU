@@ -1,11 +1,9 @@
 <?php
 
-/// app/Http/Controllers/Admin/WithdrawalRequestController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\WithdrawalRequest;
-use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 class WithdrawalRequestController extends Controller
 {
-    // fetch all withdrawal requests
     public function index(Request $request)
     {
         $query = WithdrawalRequest::with(['user', 'wallet', 'processor'])->latest();
@@ -39,8 +36,9 @@ class WithdrawalRequestController extends Controller
             $wallet = $wr->wallet ?? ($wr->user ? $wr->user->wallet : null);
 
             $wr->update([
-                'status' => WithdrawalRequest::STATUS_APPROVED,
+                'status' => WithdrawalRequest::STATUS_COMPLETED,
                 'processed_by' => Auth::id(),
+                'completed_at' => now(),
             ]);
 
             if ($wallet) {
@@ -49,13 +47,13 @@ class WithdrawalRequestController extends Controller
                     'admin_id' => Auth::id(),
                     'type' => 'debit',
                     'amount' => $wr->amount,
-                    'reason' => 'Withdrawal approved - #' . $wr->id,
+                    'reason' => 'Withdrawal completed - #' . $wr->id,
                     'withdrawal_request_id' => $wr->id,
                 ]);
             }
         });
 
-        return response()->json(['message' => 'Withdrawal approved']);
+        return response()->json(['message' => 'Withdrawal completed']);
     }
 
     public function decline(Request $request, $id)
@@ -75,7 +73,8 @@ class WithdrawalRequestController extends Controller
                 'processed_by' => Auth::id(),
             ]);
 
-            $wallet = $wr->wallet ?? ($wr->user ? $wr->user->wallet : null);
+            $user = $wr->user;
+            $wallet = $wr->wallet ?? ($user ? $user->wallet : null);
             if ($wallet) {
                 $wallet->increment('total_commissions', $wr->amount);
             }
@@ -84,5 +83,3 @@ class WithdrawalRequestController extends Controller
         return response()->json(['message' => 'Withdrawal declined']);
     }
 }
-
-

@@ -3,30 +3,34 @@ import axios, { AxiosError } from "axios"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
-// ✅ Paystack Fund Button Component
-const FundWalletButton: React.FC<{ userId: number; email: string; amount: number }> = ({ userId, email, amount }) => {
+// ✅ Fund + Approve Button
+const FundWalletButton: React.FC<{ requestId: number; userId: number; email: string; amount: number; onDone: (id: number) => void }> = ({ requestId, userId, email, amount, onDone }) => {
   const [loading, setLoading] = useState(false)
 
   const handleFund = async (): Promise<void> => {
     setLoading(true)
-    toast.loading("Processing wallet funding...", { id: "fund-wallet" })
+    const toastId = "fund-wallet-" + requestId
+    toast.loading("Funding wallet & approving request...", { id: toastId })
 
     try {
       const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ""
-      const response = await axios.post("/admin/wallet/update", {
+      const headers = { "X-CSRF-TOKEN": csrfToken }
+
+      // 1. Fund the wallet
+      await axios.post("/admin/wallet/update", {
         user_id: userId,
         amount,
         action: "fund",
-      }, {
-        headers: { "X-CSRF-TOKEN": csrfToken }
-      })
+      }, { headers })
 
-      toast.dismiss("fund-wallet")
-      toast.success(response.data?.message || "Wallet funded successfully!")
+      // 2. Mark the withdrawal request as approved
+      await axios.post(`/admin/withdrawals/${requestId}/approve`, {}, { headers })
+
+      toast.success("Wallet funded & request approved!", { id: toastId })
+      onDone(requestId)
     } catch (error: unknown) {
-      toast.dismiss("fund-wallet")
       const err = error as AxiosError<{ message?: string; error?: string }>
-      toast.error(err.response?.data?.error || err.response?.data?.message || "Something went wrong funding wallet")
+      toast.error(err.response?.data?.error || err.response?.data?.message || "Something went wrong", { id: toastId })
     } finally {
       setLoading(false)
     }
@@ -39,7 +43,7 @@ const FundWalletButton: React.FC<{ userId: number; email: string; amount: number
       className="bg-emerald-600/20 border border-emerald-600 text-emerald-400 px-3 py-1 rounded hover:bg-emerald-600/30 flex items-center gap-1"
     >
       {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-      Fund Wallet
+      {loading ? "Processing..." : "Fund Wallet"}
     </button>
   )
 }
@@ -48,8 +52,9 @@ const FundWalletButton: React.FC<{ userId: number; email: string; amount: number
 type Withdrawal = {
   id: number
   amount: number
-  status: "pending" | "approved" | "declined"
+  status: "pending" | "approved" | "completed" | "declined"
   payout_method?: string
+  account_details?: string
   decline_reason?: string
   created_at: string
   user: { id: number; name: string; email: string }
@@ -79,6 +84,10 @@ const WithdrawalRequests: React.FC = () => {
     return () => clearInterval(interval)
   }, [])
 
+  const removeRequest = (id: number) => {
+    setRequests((prev) => prev.filter((r) => r.id !== id))
+  }
+
   const declineRequest = async (id: number): Promise<void> => {
     const reason = prompt("Enter decline reason:")
     if (!reason) return
@@ -88,7 +97,7 @@ const WithdrawalRequests: React.FC = () => {
     try {
       await axios.post(`/admin/withdrawals/${id}/decline`, { decline_reason: reason })
       toast.success("Withdrawal declined", { id: "decline" })
-      fetchRequests()
+      removeRequest(id)
     } catch (error) {
       const err = error as AxiosError<{ error?: string }>
       toast.error(err.response?.data?.error ?? "Decline failed", { id: "decline" })
@@ -139,7 +148,7 @@ const WithdrawalRequests: React.FC = () => {
                     className={`px-2 py-1 rounded text-xs ${
                       r.status === "pending"
                         ? "bg-yellow-600/30 text-yellow-400"
-                        : r.status === "approved"
+                        : r.status === "approved" || r.status === "completed"
                         ? "bg-green-600/30 text-green-400"
                         : "bg-red-600/30 text-red-400"
                     }`}
@@ -154,7 +163,13 @@ const WithdrawalRequests: React.FC = () => {
                 <td>
                   {r.status === "pending" ? (
                     <div className="flex gap-2">
-                      <FundWalletButton userId={r.user.id} email={r.user.email} amount={r.amount} />
+                      <FundWalletButton
+                        requestId={r.id}
+                        userId={r.user.id}
+                        email={r.user.email}
+                        amount={r.amount}
+                        onDone={removeRequest}
+                      />
                       <button
                         onClick={() => declineRequest(r.id)}
                         disabled={processingId === r.id}
