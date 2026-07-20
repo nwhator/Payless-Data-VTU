@@ -23,7 +23,7 @@ interface PaymentBreakdown {
 export default function UpgradeToAgentForm({ 
   userId, 
   userEmail, 
-  upgradeFee = 20,
+  upgradeFee = 30,
   upgradeStatus,
   userRole,
   onSuccess 

@@ -312,7 +312,7 @@ export default function CustomerDashboard() {
             )}
 
             {active === "upgrade" && (
-              <AgentUpgrade upgradeFee={20} user={user} />
+              <AgentUpgrade upgradeFee={30} user={user} />
             )}
 
             {active === "support" && <SupportCenter />}

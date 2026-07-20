@@ -67,14 +67,14 @@ class CommissionService
                     'meta' => null,
                 ]);
 
-                // 4. Credit the Agent's Wallet
+                // 4. Credit the Agent's Wallet (auto-funds to spendable balance)
                 $wallet = Wallet::firstOrCreate(['user_id' => $agent->id]);
-                
-                // Add commission to current balance and total commissions
-                // $wallet->increment('balance', $commissionAmount);
-                $wallet->increment('total_commissions', $commissionAmount); 
-                
-                Log::info('Agent commission successfully recorded and credited.', [
+
+                $wallet->increment('balance', $commissionAmount);
+                $wallet->increment('total_commissions', $commissionAmount);
+                $agent->increment('wallet_balance', $commissionAmount);
+
+                Log::info('Agent commission automatically credited to wallet.', [
                     'agent_id' => $agent->id,
                     'commission_amount' => $commissionAmount,
                     'sale_reference' => $saleReference,
