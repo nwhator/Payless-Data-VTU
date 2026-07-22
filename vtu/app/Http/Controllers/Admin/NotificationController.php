@@ -23,6 +23,14 @@ class NotificationController extends Controller
             ->latest()
             ->get();
 
+        // Process image URLs so the admin dashboard gets full URLs
+        $notifications->map(function ($notification) {
+            if ($notification->image) {
+                $notification->image_url = Storage::disk('public')->url($notification->image);
+            }
+            return $notification;
+        });
+
         // For admin to use in recipient selection
         $agents = User::where('role', 'agent')
             ->select('id', 'name', 'email')
@@ -98,8 +106,8 @@ class NotificationController extends Controller
             // Map the collection to ensure the image path is a full URL if it exists
             ->map(function ($notification) {
                 if ($notification->image_url) {
-                    // Prepend the full storage URL
-                    $notification->image_url = Storage::url($notification->image_url);
+                    // Prepend the full storage URL using the public disk
+                    $notification->image_url = Storage::disk('public')->url($notification->image_url);
                 }
                 return $notification;
             });
