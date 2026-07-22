@@ -10,10 +10,9 @@ interface Agent {
 }
 
 const SendNotification: React.FC = () => {
-  const [agents, setAgents] = useState<Agent[]>([])
+const [agents, setAgents] = useState<Agent[]>([])
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
-  const [image, setImage] = useState<File | null>(null)
   const [recipients, setRecipients] = useState<string[]>(["all"])
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
@@ -57,7 +56,6 @@ const SendNotification: React.FC = () => {
     const formData = new FormData()
     formData.append("title", title)
     formData.append("body", body)
-    if (image) formData.append("image", image)
     recipients.forEach((r, i) => formData.append(`recipients[${i}]`, r))
 
     try {
@@ -65,7 +63,6 @@ const SendNotification: React.FC = () => {
       toast.success("✅ Notification sent successfully!")
       setTitle("")
       setBody("")
-      setImage(null)
       setRecipients(["all"])
     } catch (error) {
       const message =
