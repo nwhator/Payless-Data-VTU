@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { Product } from "../types";
@@ -106,8 +106,8 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
                 <div className="flex items-center gap-3">
                   <div 
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold"
-                    style={{ backgroundColor: `${PRIMARY_ACCENT}22", color: PRIMARY_ACCENT
-                  }>
+                    style={{ backgroundColor: `${PRIMARY_ACCENT}22`, color: PRIMARY_ACCENT }}
+                  >
                     {network.charAt(0)}
                   </div>
                   <div>
@@ -142,10 +142,10 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
                           <p className="text-sm font-medium opacity-70 mb-3">{p.name}</p>
                           <span 
                             className="text-xs font-bold py-1 px-4 rounded-full uppercase tracking-wider"
-                            style={{ backgroundColor: "rgba(255,204,0,0.2)", color: PRIMARY_ACCENT
-                  }>
-                    {p.validity}
-                  </span>
+                            style={{ backgroundColor: "rgba(255,204,0,0.2)", color: PRIMARY_ACCENT }}
+                          >
+                            {p.validity}
+                          </span>
                           <div className="mt-4 pt-4 border-t w-full" style={{ borderColor: "#33333A" }}>
                             <p className="text-lg font-bold" style={{ color: TEXT_LIGHT }}>
                               {p.price !== null ? (
