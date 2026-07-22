@@ -88,8 +88,8 @@ const STATUS_OPTIONS = [
 const NETWORK_OPTIONS = [
     { key: "all_networks", label: "All Networks" },
     { key: "MTN", label: "MTN" },
-    { key: "TELECEL", label: "TELECEL" },
-    { key: "AT iShare", label: "AT iShare" },
+    { key: "AirtelTigo", label: "AirtelTigo" },
+    { key: "Telecel", label: "Telecel" },
 ]
 
 const PER_PAGE_OPTIONS = [50, 100, 200, 500, 1000]

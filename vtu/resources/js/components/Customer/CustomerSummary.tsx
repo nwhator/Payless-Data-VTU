@@ -69,6 +69,14 @@ function extractNetwork(productName: string): string {
   return "Other"
 }
 
+function getNetworkFromCategory(category: string): string {
+  const lower = category.toLowerCase()
+  if (lower.includes('mtn')) return 'MTN'
+  if (lower.includes('airtel') || lower.includes('tigo')) return 'AirtelTigo'
+  if (lower.includes('telecel') || lower.includes('telcel') || lower.includes('telesol') || lower.includes('vodafone')) return 'Telecel'
+  return 'Other'
+}
+
 // Temporary Basic Modal Wrapper (replace with your actual modal component if you have one)
 const Modal: React.FC<{ isOpen: boolean; onClose: () => void; children: React.ReactNode }> = ({ isOpen, onClose, children }) => {
     if (!isOpen) return null;
