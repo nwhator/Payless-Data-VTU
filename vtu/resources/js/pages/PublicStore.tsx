@@ -8,6 +8,7 @@ interface Product {
   id: number;
   name?: string;
   product_code: string;
+  network?: string;
   category: string;
   capacity: string;
   validity: string;
@@ -26,18 +27,22 @@ interface Store {
 // ------------------------------------
 
 // --- Network grouping helpers ---
-const NETWORKS = [
-  { name: "MTN", keywords: ["mtn"] },
-  { name: "AirtelTigo", keywords: ["airtel", "tigo"] },
-  { name: "Telecel", keywords: ["telecel", "telcel", "telesol", "vodafone"] },
-]
+const NETWORK_DISPLAY: Record<string, string> = {
+  MTN: "MTN",
+  Telcel: "Telecel",
+  Airtel: "AirtelTigo",
+  Glo: "Glo",
+  Vodafone: "Vodafone",
+};
 
-function extractNetwork(productName: string): string {
-  const lower = productName.toLowerCase()
-  for (const net of NETWORKS) {
-    if (net.keywords.some((k) => lower.includes(k))) return net.name
-  }
-  return "Other"
+function getNetworkName(product: Product): string {
+  const raw = (product.network || "").trim();
+  if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
+  if (raw) return raw;
+  const cat = (product.category || "").trim();
+  if (cat && NETWORK_DISPLAY[cat]) return NETWORK_DISPLAY[cat];
+  if (cat) return cat;
+  return "Other";
 }
 // -------------------------------
 
@@ -370,7 +375,7 @@ const PublicStore: React.FC = () => {
     const groupedProducts = useMemo(() => {
       const groups: Record<string, Product[]> = {}
       for (const p of products) {
-        const net = extractNetwork(p.name ?? p.category ?? "")
+        const net = getNetworkName(p);
         if (!groups[net]) groups[net] = []
         groups[net].push(p)
       }

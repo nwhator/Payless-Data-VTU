@@ -22,6 +22,7 @@ export interface Wallet {
 export interface Product {
   id: number;
   name: string;
+  network?: string;
   customer_price: number;
   product_code?: string;
   capacity?: string;
@@ -55,26 +56,22 @@ const CURRENCY_SIGN = "₵";
 ------------------------------ */
 
 // --- Network grouping helpers ---
-const NETWORKS = [
-  { name: "MTN", keywords: ["mtn"] },
-  { name: "AirtelTigo", keywords: ["airtel", "tigo"] },
-  { name: "Telecel", keywords: ["telecel", "telcel", "telesol", "vodafone"] },
-]
+const NETWORK_DISPLAY: Record<string, string> = {
+  MTN: "MTN",
+  Telcel: "Telecel",
+  Airtel: "AirtelTigo",
+  Glo: "Glo",
+  Vodafone: "Vodafone",
+};
 
-function extractNetwork(productName: string): string {
-  const lower = productName.toLowerCase()
-  for (const net of NETWORKS) {
-    if (net.keywords.some((k) => lower.includes(k))) return net.name
-  }
-  return "Other"
-}
-
-function getNetworkFromCategory(category: string): string {
-  const lower = category.toLowerCase()
-  if (lower.includes('mtn')) return 'MTN'
-  if (lower.includes('airtel') || lower.includes('tigo')) return 'AirtelTigo'
-  if (lower.includes('telecel') || lower.includes('telcel') || lower.includes('telesol') || lower.includes('vodafone')) return 'Telecel'
-  return 'Other'
+function getNetworkName(product: Product): string {
+  const raw = (product.network || "").trim();
+  if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
+  if (raw) return raw;
+  const cat = (product as any).category || "";
+  if (cat && NETWORK_DISPLAY[cat]) return NETWORK_DISPLAY[cat];
+  if (cat) return cat;
+  return "Other";
 }
 
 // Temporary Basic Modal Wrapper (replace with your actual modal component if you have one)
@@ -201,7 +198,7 @@ export default function CustomerSummary({
     const groupedProducts = useMemo(() => {
       const groups: Record<string, Product[]> = {}
       for (const p of products) {
-        const net = extractNetwork(p.name)
+        const net = getNetworkName(p)
         if (!groups[net]) groups[net] = []
         groups[net].push(p)
       }
