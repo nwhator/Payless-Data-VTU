@@ -14,7 +14,7 @@ function getNetworkName(product: any): string {
   const raw = (product.network || "").trim();
   if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
   if (raw) return raw;
-  return "Other";
+  return "";
 }
 
 interface AgentStoreViewProps {
@@ -44,6 +44,7 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
     const groups: Record<string, any[]> = {};
     products.forEach((product) => {
       const network = getNetworkName(product);
+      if (!network) return;
       if (!groups[network]) groups[network] = [];
       groups[network].push(product);
     });

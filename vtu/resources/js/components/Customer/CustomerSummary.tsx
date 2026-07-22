@@ -68,10 +68,7 @@ function getNetworkName(product: Product): string {
   const raw = (product.network || "").trim();
   if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
   if (raw) return raw;
-  const cat = (product as any).category || "";
-  if (cat && NETWORK_DISPLAY[cat]) return NETWORK_DISPLAY[cat];
-  if (cat) return cat;
-  return "Other";
+  return "";
 }
 
 // Temporary Basic Modal Wrapper (replace with your actual modal component if you have one)
@@ -199,6 +196,7 @@ export default function CustomerSummary({
       const groups: Record<string, Product[]> = {}
       for (const p of products) {
         const net = getNetworkName(p)
+        if (!net) continue;
         if (!groups[net]) groups[net] = []
         groups[net].push(p)
       }

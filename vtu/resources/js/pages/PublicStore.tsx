@@ -39,10 +39,7 @@ function getNetworkName(product: Product): string {
   const raw = (product.network || "").trim();
   if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
   if (raw) return raw;
-  const cat = (product.category || "").trim();
-  if (cat && NETWORK_DISPLAY[cat]) return NETWORK_DISPLAY[cat];
-  if (cat) return cat;
-  return "Other";
+  return "";
 }
 // -------------------------------
 
@@ -376,6 +373,7 @@ const PublicStore: React.FC = () => {
       const groups: Record<string, Product[]> = {}
       for (const p of products) {
         const net = getNetworkName(p);
+        if (!net) continue;
         if (!groups[net]) groups[net] = []
         groups[net].push(p)
       }
