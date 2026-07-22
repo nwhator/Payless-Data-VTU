@@ -256,7 +256,7 @@ class AgentStoreController extends Controller
         $agentId = $store->user_id;
 
         $products = Product::query()
-            ->select('products.id', 'products.product_code', 'products.category', 'products.capacity', 'products.validity')
+            ->select('products.id', 'products.product_code', 'products.name', 'products.network', 'products.category', 'products.capacity', 'products.capacity_value', 'products.validity')
             ->whereHas('agentPrices', function ($q) use ($agentId) {
                 $q->where('agent_id', $agentId);
             })
@@ -269,8 +269,11 @@ class AgentStoreController extends Controller
                 return [
                     'id' => $product->id,
                     'product_code' => $product->product_code,
+                    'name' => $product->name,
+                    'network' => $product->network,
                     'category' => $product->category,
                     'capacity' => $product->capacity,
+                    'capacity_value' => $product->capacity_value,
                     'validity' => $product->validity,
                     'price' => $agentPrice->agent_price ?? null,
                 ];
