@@ -26,7 +26,8 @@ class NotificationController extends Controller
         // Process image URLs so the admin dashboard gets full URLs
         $notifications->map(function ($notification) {
             if ($notification->image) {
-                $notification->image_url = Storage::disk('public')->url($notification->image);
+                // Use the 'storage' disk for vtu subdomain URL generation
+                $notification->image_url = Storage::disk('storage')->url($notification->image);
             }
             return $notification;
         });
