@@ -64,10 +64,25 @@ const NETWORK_DISPLAY: Record<string, string> = {
   Vodafone: "Vodafone",
 };
 
+const NETWORK_KEYWORDS: Record<string, string[]> = {
+  MTN: ["mtn"],
+  Telcel: ["telcel", "telecel", "vodafone"],
+  Airtel: ["airtel", "tigo"],
+  Glo: ["glo"],
+};
+
 function getNetworkName(product: Product): string {
   const raw = (product.network || "").trim();
   if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
   if (raw) return raw;
+
+  const name = (product.name || "").toLowerCase();
+  for (const [dbValue, keywords] of Object.entries(NETWORK_KEYWORDS)) {
+    if (keywords.some((k) => name.includes(k))) {
+      return NETWORK_DISPLAY[dbValue] || dbValue;
+    }
+  }
+
   return "";
 }
 
