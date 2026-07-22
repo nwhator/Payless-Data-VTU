@@ -160,7 +160,7 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
                 )}
               </AnimatePresence>
             </div>
-          ))}
+          ))
         )}
       </div>
     </motion.div>
