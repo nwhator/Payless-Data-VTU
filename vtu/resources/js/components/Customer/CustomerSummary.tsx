@@ -56,31 +56,32 @@ const CURRENCY_SIGN = "₵";
 ------------------------------ */
 
 // --- Network grouping helpers ---
-const NETWORK_DISPLAY: Record<string, string> = {
-  MTN: "MTN",
-  Telcel: "Telecel",
-  Airtel: "AirtelTigo",
-  Glo: "Glo",
-  Vodafone: "Vodafone",
-};
+const GHANA_NETWORKS = ["MTN", "AirtelTigo", "Telecel", "Glo", "Vodafone"] as const;
 
 const NETWORK_KEYWORDS: Record<string, string[]> = {
   MTN: ["mtn"],
-  Telcel: ["telcel", "telecel", "vodafone"],
-  Airtel: ["airtel", "tigo"],
+  AirtelTigo: ["airtel", "tigo", "airteltigo"],
+  Telecel: ["telcel", "telecel", "vodafone"],
   Glo: ["glo"],
+  Vodafone: ["vodafone"],
 };
 
-function getNetworkName(product: Product): string {
+function matchNetwork(product: Product): string {
   const raw = (product.network || "").trim();
-  if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
-  if (raw) return raw;
+  if (raw) {
+    const lower = raw.toLowerCase();
+    for (const net of GHANA_NETWORKS) {
+      if (net.toLowerCase() === lower) return net;
+    }
+    for (const [displayName, keywords] of Object.entries(NETWORK_KEYWORDS)) {
+      if (keywords.some((k) => lower.includes(k))) return displayName;
+    }
+    return raw;
+  }
 
   const name = (product.name || "").toLowerCase();
-  for (const [dbValue, keywords] of Object.entries(NETWORK_KEYWORDS)) {
-    if (keywords.some((k) => name.includes(k))) {
-      return NETWORK_DISPLAY[dbValue] || dbValue;
-    }
+  for (const [displayName, keywords] of Object.entries(NETWORK_KEYWORDS)) {
+    if (keywords.some((k) => name.includes(k))) return displayName;
   }
 
   return "";
@@ -208,12 +209,11 @@ export default function CustomerSummary({
     };
 
     const groupedProducts = useMemo(() => {
-      const groups: Record<string, Product[]> = {}
+      const groups: Record<string, Product[]> = {};
+      GHANA_NETWORKS.forEach((net) => { groups[net] = []; });
       for (const p of products) {
-        const net = getNetworkName(p)
-        if (!net) continue;
-        if (!groups[net]) groups[net] = []
-        groups[net].push(p)
+        const net = matchNetwork(p);
+        if (net && groups[net]) groups[net].push(p);
       }
       Object.keys(groups).forEach((key) => {
         groups[key].sort((a: any, b: any) => {
@@ -222,7 +222,7 @@ export default function CustomerSummary({
           return va - vb;
         });
       });
-      return groups
+      return groups;
     }, [products])
 
   return (
@@ -293,52 +293,59 @@ export default function CustomerSummary({
       {/* PRODUCTS (Grouped by Network) */}
       {loadingProducts ? (
         <p className="text-center text-slate-400">Loading products...</p>
-      ) : products.length === 0 ? (
-        <p className="text-center text-slate-400">No products available.</p>
       ) : (
         <div className="space-y-3">
-          {Object.entries(groupedProducts).map(([network, netProducts]) => (
-            <div key={network} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              <button
-                onClick={() => setOpenNetwork(openNetwork === network ? null : network)}
-                className="w-full flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors hover:bg-white/5"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-                    style={{ backgroundColor: `${PRIMARY_ACCENT}22`, color: PRIMARY_ACCENT }}
-                  >
-                    {network.charAt(0)}
-                  </div>
-                  <div>
-                    <span className="text-sm sm:text-base font-semibold text-white">{network}</span>
-                    <span className="ml-2 text-xs text-slate-500">({netProducts.length})</span>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform duration-200 ${
-                    openNetwork === network ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              <AnimatePresence>
-                {openNetwork === network && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4 sm:p-5 pt-2 border-t border-white/10">
-                      {netProducts.map((p) => (
-                        <ProductCard key={p.product_code ?? p.id} product={p} onClick={() => onProductClick(p)} />
-                      ))}
+          {GHANA_NETWORKS.map((network) => {
+            const netProducts = groupedProducts[network] || [];
+            return (
+              <div key={network} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setOpenNetwork(openNetwork === network ? null : network)}
+                  className="w-full flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors hover:bg-white/5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                      style={{ backgroundColor: `${PRIMARY_ACCENT}22`, color: PRIMARY_ACCENT }}
+                    >
+                      {network.charAt(0)}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
+                    <div>
+                      <span className="text-sm sm:text-base font-semibold text-white">{network}</span>
+                      <span className="ml-2 text-xs text-slate-500">({netProducts.length})</span>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform duration-200 ${
+                      openNetwork === network ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {openNetwork === network && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {netProducts.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4 sm:p-5 pt-2 border-t border-white/10">
+                          {netProducts.map((p) => (
+                            <ProductCard key={p.product_code ?? p.id} product={p} onClick={() => onProductClick(p)} />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 text-sm py-6 border-t border-white/10">
+                          No {network} plans available yet
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </div>
       )}
 

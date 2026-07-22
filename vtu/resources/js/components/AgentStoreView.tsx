@@ -2,31 +2,32 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-const NETWORK_DISPLAY: Record<string, string> = {
-  MTN: "MTN",
-  Telcel: "Telecel",
-  Airtel: "AirtelTigo",
-  Glo: "Glo",
-  Vodafone: "Vodafone",
-};
+const GHANA_NETWORKS = ["MTN", "AirtelTigo", "Telecel", "Glo", "Vodafone"] as const;
 
 const NETWORK_KEYWORDS: Record<string, string[]> = {
   MTN: ["mtn"],
-  Telcel: ["telcel", "telecel", "vodafone"],
-  Airtel: ["airtel", "tigo"],
+  AirtelTigo: ["airtel", "tigo", "airteltigo"],
+  Telecel: ["telcel", "telecel", "vodafone"],
   Glo: ["glo"],
+  Vodafone: ["vodafone"],
 };
 
-function getNetworkName(product: any): string {
+function matchNetwork(product: any): string {
   const raw = (product.network || "").trim();
-  if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
-  if (raw) return raw;
+  if (raw) {
+    const lower = raw.toLowerCase();
+    for (const net of GHANA_NETWORKS) {
+      if (net.toLowerCase() === lower) return net;
+    }
+    for (const [displayName, keywords] of Object.entries(NETWORK_KEYWORDS)) {
+      if (keywords.some((k) => lower.includes(k))) return displayName;
+    }
+    return raw;
+  }
 
   const name = (product.name || "").toLowerCase();
-  for (const [dbValue, keywords] of Object.entries(NETWORK_KEYWORDS)) {
-    if (keywords.some((k) => name.includes(k))) {
-      return NETWORK_DISPLAY[dbValue] || dbValue;
-    }
+  for (const [displayName, keywords] of Object.entries(NETWORK_KEYWORDS)) {
+    if (keywords.some((k) => name.includes(k))) return displayName;
   }
 
   return "";
@@ -57,11 +58,10 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, any[]> = {};
+    GHANA_NETWORKS.forEach((net) => { groups[net] = []; });
     products.forEach((product) => {
-      const network = getNetworkName(product);
-      if (!network) return;
-      if (!groups[network]) groups[network] = [];
-      groups[network].push(product);
+      const net = matchNetwork(product);
+      if (net && groups[net]) groups[net].push(product);
     });
 
     Object.keys(groups).forEach((key) => {
@@ -125,12 +125,9 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
       </div>
 
       <div className="max-w-3xl mx-auto space-y-4">
-        {!loading && products.length === 0 ? (
-          <div className="text-center text-slate-400 py-10 bg-white/5 border border-white/10 rounded-xl">
-            No products available yet. Set up your pricing in the pricing tab.
-          </div>
-        ) : (
-          Object.entries(groupedProducts).map(([network, netProducts]) => (
+        {GHANA_NETWORKS.map((network) => {
+          const netProducts = groupedProducts[network] || [];
+          return (
             <div
               key={network}
               className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden"
@@ -175,71 +172,77 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.15 }}
                   >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-5 pt-3 border-t border-white/10">
-                      {netProducts.map((p) => (
-                        <motion.div
-                          key={p.id}
-                          variants={hoverEffect}
-                          whileHover="hover"
-                          whileTap="tap"
-                          className="flex flex-col items-center p-5 rounded-2xl border transition-all duration-300 text-center"
-                          style={{
-                            backgroundColor: CARD_BACKGROUND,
-                            color: TEXT_LIGHT,
-                            borderColor: "transparent",
-                          }}
-                        >
-                          <div
-                            className="text-4xl font-black mb-1"
-                            style={{ color: PRIMARY_ACCENT }}
-                          >
-                            {p.capacity}
-                          </div>
-                          <p className="text-sm font-medium opacity-70 mb-3">
-                            {p.name}
-                          </p>
-                          <span
-                            className="text-xs font-bold py-1 px-4 rounded-full uppercase tracking-wider"
+                    {netProducts.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-5 pt-3 border-t border-white/10">
+                        {netProducts.map((p) => (
+                          <motion.div
+                            key={p.id}
+                            variants={hoverEffect}
+                            whileHover="hover"
+                            whileTap="tap"
+                            className="flex flex-col items-center p-5 rounded-2xl border transition-all duration-300 text-center"
                             style={{
-                              backgroundColor: "rgba(255,204,0,0.2)",
-                              color: PRIMARY_ACCENT,
+                              backgroundColor: CARD_BACKGROUND,
+                              color: TEXT_LIGHT,
+                              borderColor: "transparent",
                             }}
                           >
-                            {p.validity}
-                          </span>
-                          <div
-                            className="mt-4 pt-4 border-t w-full"
-                            style={{ borderColor: "#33333A" }}
-                          >
-                            <p
-                              className="text-lg font-bold"
-                              style={{ color: TEXT_LIGHT }}
+                            <div
+                              className="text-4xl font-black mb-1"
+                              style={{ color: PRIMARY_ACCENT }}
                             >
-                              {p.agent_price !== null && p.agent_price > 0 ? (
-                                <span>
-                                  <span className="text-sm font-light opacity-80">
-                                    GHS{" "}
-                                  </span>
-                                  {p.agent_price.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
-                                </span>
-                              ) : (
-                                "Unavailable"
-                              )}
+                              {p.capacity}
+                            </div>
+                            <p className="text-sm font-medium opacity-70 mb-3">
+                              {p.name}
                             </p>
-                            <p className="text-xs opacity-60 mt-1">Price</p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
+                            <span
+                              className="text-xs font-bold py-1 px-4 rounded-full uppercase tracking-wider"
+                              style={{
+                                backgroundColor: "rgba(255,204,0,0.2)",
+                                color: PRIMARY_ACCENT,
+                              }}
+                            >
+                              {p.validity}
+                            </span>
+                            <div
+                              className="mt-4 pt-4 border-t w-full"
+                              style={{ borderColor: "#33333A" }}
+                            >
+                              <p
+                                className="text-lg font-bold"
+                                style={{ color: TEXT_LIGHT }}
+                              >
+                                {p.agent_price !== null && p.agent_price > 0 ? (
+                                  <span>
+                                    <span className="text-sm font-light opacity-80">
+                                      GHS{" "}
+                                    </span>
+                                    {p.agent_price.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                                  </span>
+                                ) : (
+                                  "Unavailable"
+                                )}
+                              </p>
+                              <p className="text-xs opacity-60 mt-1">Price</p>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 text-sm py-6 border-t border-white/10">
+                        No {network} plans available yet
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </motion.div>
   );
