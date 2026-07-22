@@ -40,6 +40,7 @@ class ProductProxyController extends Controller
                 'id' => $p->id,
                 'product_code' => $p->product_code,
                 'name' => $p->name,
+                'network' => $p->network,
                 'category' => $p->category,
                 'capacity' => $p->capacity,
                 'capacity_value' => $p->capacity_value,

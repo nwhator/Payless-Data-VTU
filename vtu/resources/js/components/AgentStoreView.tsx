@@ -14,9 +14,6 @@ function getNetworkName(product: any): string {
   const raw = (product.network || "").trim();
   if (raw && NETWORK_DISPLAY[raw]) return NETWORK_DISPLAY[raw];
   if (raw) return raw;
-  const cat = (product.category || "").trim();
-  if (cat && NETWORK_DISPLAY[cat]) return NETWORK_DISPLAY[cat];
-  if (cat) return cat;
   return "Other";
 }
 
@@ -50,6 +47,15 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
       if (!groups[network]) groups[network] = [];
       groups[network].push(product);
     });
+
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => {
+        const va = a.capacity_value ?? 0;
+        const vb = b.capacity_value ?? 0;
+        return va - vb;
+      });
+    });
+
     return groups;
   }, [products]);
 
@@ -193,12 +199,12 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
                               className="text-lg font-bold"
                               style={{ color: TEXT_LIGHT }}
                             >
-                              {p.price !== null ? (
+                              {p.agent_price !== null && p.agent_price > 0 ? (
                                 <span>
                                   <span className="text-sm font-light opacity-80">
                                     GHS{" "}
                                   </span>
-                                  {p.price.toLocaleString(undefined, {
+                                  {p.agent_price.toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
                                   })}

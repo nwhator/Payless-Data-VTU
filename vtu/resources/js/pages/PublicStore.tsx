@@ -379,6 +379,13 @@ const PublicStore: React.FC = () => {
         if (!groups[net]) groups[net] = []
         groups[net].push(p)
       }
+      Object.keys(groups).forEach((key) => {
+        groups[key].sort((a: any, b: any) => {
+          const va = a.capacity_value ?? 0;
+          const vb = b.capacity_value ?? 0;
+          return va - vb;
+        });
+      });
       return groups
     }, [products])
 
