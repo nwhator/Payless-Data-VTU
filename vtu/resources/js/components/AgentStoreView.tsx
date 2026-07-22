@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
-import { Product } from "../types";
 
 const NETWORKS = [
   { name: "MTN", keywords: ["mtn", "mtn9", "mtn15", "mtn data", "mtngiga", "mtn500mb", "mtn1gb"] },
@@ -10,10 +9,8 @@ const NETWORKS = [
   { name: "Telecel", keywords: ["telec", "tlec", "telecel", "tigo", "telcel", "telesol", "vodafone", "gl", "glo", "vodafone data", "telecel data"] },
 ];
 
-function extractNetwork(product: Product): string {
-  const name = product.name || product.category || "";
+function extractNetwork(name: string): string {
   const lowerName = name.toLowerCase();
-
   for (const net of NETWORKS) {
     if (net.keywords.some((kw) => lowerName.includes(kw))) return net.name;
   }
@@ -43,20 +40,19 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
 }) => {
   const [openNetwork, setOpenNetwork] = useState("");
 
-  const PRIMARY_ACCENT = "#FFCC00";
-  const CARD_BACKGROUND = "#1E1E24";
-  const TEXT_LIGHT = "#E0E0E0";
-  const TEXT_ACCENT = PRIMARY_ACCENT;
-
   const groupedProducts = useMemo(() => {
     const groups: Record<string, any[]> = {};
     products.forEach(product => {
-      const network = extractNetwork(product);
+      const network = extractNetwork(product.name || product.category || "");
       if (!groups[network]) groups[network] = [];
       groups[network].push(product);
     });
     return groups;
   }, [products]);
+
+  const PRIMARY_ACCENT = "#FFCC00";
+  const CARD_BACKGROUND = "#1E1E24";
+  const TEXT_LIGHT = "#E0E0E0";
 
   const hoverEffect = {
     initial: { scale: 1, boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)" },
@@ -116,7 +112,7 @@ const AgentStoreView: React.FC<AgentStoreViewProps> = ({
                   </div>
                 </div>
                 <ChevronDown 
-                  className={`w-5 h-5 text-gray-400 transition-transform ${openNetwork === network ? "rotate-180" : ""}`
+                  className={`w-5 h-5 text-gray-400 transition-transform ${openNetwork === network ? "rotate-180" : ""}`}
                 />
               </button>
 
