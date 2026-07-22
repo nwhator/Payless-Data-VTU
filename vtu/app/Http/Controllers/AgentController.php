@@ -46,6 +46,8 @@ class AgentController extends Controller
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
+                    'network' => $p->network,
+                    'category' => $p->category,
                     'capacity' => $p->capacity,
                     'admin_agent_price' => $adminAgentPrice,
                     'added_amount' => $added,

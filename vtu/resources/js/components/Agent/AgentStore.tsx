@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import axios from "axios"
 import { toast } from "sonner"
 import { AnimatePresence } from "framer-motion"
 import EmptyState from "../EmptyState"
-import StoreView from "../StoreView"
+import AgentStoreView from "../AgentStoreView"
 import StoreModal from "../modals/StoreModal"
 import PublishModal from "../modals/PublishModal"
 import StoreEditor from "../StoreEditor"
@@ -20,6 +20,8 @@ const AgentStore: React.FC<{
     const [editMode, setEditMode] = useState(false)
     const [showModal, setShowModal] = useState(false)
     const [showPublishModal, setShowPublishModal] = useState(false)
+    const [storeProducts, setStoreProducts] = useState<any[]>([])
+    const [productsLoading, setProductsLoading] = useState(false)
 
     // Fetch store from backend
     useEffect(() => {
@@ -54,7 +56,7 @@ const AgentStore: React.FC<{
                 toast.error(data.message || "❌ Failed to unpublish store")
             }
         } catch (error) {
-            console.error("Delete Store failed:", error);
+            console.error("Unpublish Store failed:", error);
             toast.error("❌ Error unpublishing store.")
         } finally {
             setPublishing(false)
@@ -128,6 +130,25 @@ const AgentStore: React.FC<{
         }
     }
 
+    // Fetch store products when store is available
+    useEffect(() => {
+        const loadStoreProducts = async () => {
+            if (!store) return;
+            setProductsLoading(true);
+            try {
+                const { data } = await axios.get("/agent/products");
+                if (data.success) {
+                    setStoreProducts(data.products || []);
+                }
+            } catch {
+                toast.error("Failed to load store products");
+            } finally {
+                setProductsLoading(false);
+            }
+        };
+        loadStoreProducts();
+    }, [store]);
+
     return (
         <div className="p-4 sm:p-6">
             {loading ? (
@@ -149,13 +170,16 @@ const AgentStore: React.FC<{
                     }}
                 />
             ) : (
-                <StoreView
+                <AgentStoreView
                     store={store}
                     onPublish={publishStore}
                     onUnpublish={unpublishStore} // 👈 Added
                     onDelete={deleteStore}       // 👈 Added
                     publishing={publishing}
                     onEdit={() => setEditMode(true)}
+                    onSetActive={setActive}
+                    products={storeProducts}
+                    loading={productsLoading}
                 />
             )}
 
@@ -166,8 +190,19 @@ const AgentStore: React.FC<{
                         store={store}
                         onClose={() => setShowModal(false)}
                         onSaved={(newStore) => {
-                            setStore(newStore)
-                            setShowModal(false)
+                            setStore(newStore);
+                            setShowModal(false);
+                            // Load products after store is created
+                            if (newStore) {
+                                setTimeout(async () => {
+                                    try {
+                                        const { data } = await axios.get("/agent/products");
+                                        if (data.success) {
+                                            setStoreProducts(data.products || []);
+                                        }
+                                    } catch {}
+                                }, 500);
+                            }
                         }}
                     />
                 )}
