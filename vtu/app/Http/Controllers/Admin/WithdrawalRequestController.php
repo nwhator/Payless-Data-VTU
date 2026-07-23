@@ -27,8 +27,7 @@ class WithdrawalRequestController extends Controller
 
     /**
      * Admin approves the withdrawal request.
-     * Only marks as approved — does NOT send money or fund wallet.
-     * Agent will trigger the actual Paystack payout from their side.
+     * Deducts from commission balance and marks completed.
      */
     public function approve(Request $request, $id)
     {
@@ -39,20 +38,38 @@ class WithdrawalRequestController extends Controller
         }
 
         DB::transaction(function () use ($wr) {
+            $wallet = $wr->wallet ?? ($wr->user ? $wr->user->wallet : null);
+
+            if (!$wallet || $wallet->total_commissions < $wr->amount) {
+                throw new \Exception('Insufficient commission balance.');
+            }
+
+            $wallet->decrement('total_commissions', $wr->amount);
+
+            WalletTransaction::create([
+                'wallet_id' => $wallet->id,
+                'admin_id' => Auth::id(),
+                'type' => 'debit',
+                'amount' => $wr->amount,
+                'reason' => 'Withdrawal approved - #' . $wr->id,
+                'withdrawal_request_id' => $wr->id,
+            ]);
+
             $wr->update([
-                'status' => WithdrawalRequest::STATUS_APPROVED,
+                'status' => WithdrawalRequest::STATUS_COMPLETED,
                 'processed_by' => Auth::id(),
+                'completed_at' => now(),
             ]);
         });
 
         return response()->json([
-            'message' => 'Withdrawal approved. Agent can now withdraw funds.',
+            'message' => 'Withdrawal approved and GHS ' . number_format($wr->amount, 2) . ' deducted from commission balance.',
         ]);
     }
 
     /**
      * Admin declines the withdrawal request.
-     * Re-credits the agent's commission balance.
+     * No re-credit needed since no deduction happened at submission.
      */
     public function decline(Request $request, $id)
     {
@@ -64,20 +81,14 @@ class WithdrawalRequestController extends Controller
             return response()->json(['error' => 'Already processed'], 400);
         }
 
-        DB::transaction(function () use ($wr, $request) {
-            $wr->update([
-                'status' => WithdrawalRequest::STATUS_DECLINED,
-                'decline_reason' => $request->decline_reason,
-                'processed_by' => Auth::id(),
-            ]);
+        $wr->update([
+            'status' => WithdrawalRequest::STATUS_DECLINED,
+            'decline_reason' => $request->decline_reason,
+            'processed_by' => Auth::id(),
+        ]);
 
-            $user = $wr->user;
-            $wallet = $wr->wallet ?? ($user ? $user->wallet : null);
-            if ($wallet) {
-                $wallet->increment('total_commissions', $wr->amount);
-            }
-        });
-
-        return response()->json(['message' => 'Withdrawal declined and commissions re-credited.']);
+        return response()->json([
+            'message' => 'Withdrawal declined.',
+        ]);
     }
 }

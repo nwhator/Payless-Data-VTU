@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { Send, Clock, CheckCircle, XCircle, ArrowDownLeft } from "lucide-react";
+import { Send, Clock, CheckCircle, XCircle, Building2, Smartphone } from "lucide-react";
 
 interface WithdrawalRequest {
   id: number;
@@ -24,10 +24,13 @@ const AgentWithdrawal: React.FC = () => {
   const [history, setHistory] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [processingId, setProcessingId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     amount: "",
+    method: "momo",
+    account_name: "",
+    account_number: "",
+    bank_name: "",
   });
 
   const fetchData = useCallback(async () => {
@@ -53,6 +56,13 @@ const AgentWithdrawal: React.FC = () => {
   const availableBalance = stats?.total_commissions ?? 0;
   const pendingAmount = stats?.pending_withdrawals ?? 0;
 
+  const buildAccountDetails = (): string => {
+    if (form.method === "momo") {
+      return `${form.account_name} | ${form.account_number}`;
+    }
+    return `${form.account_name} | ${form.account_number} | ${form.bank_name}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = parseFloat(form.amount);
@@ -65,13 +75,27 @@ const AgentWithdrawal: React.FC = () => {
       toast.error("Insufficient commission balance");
       return;
     }
+    if (!form.account_name.trim() || !form.account_number.trim()) {
+      toast.error("Please fill in all account details");
+      return;
+    }
+    if (form.method === "bank" && !form.bank_name.trim()) {
+      toast.error("Please enter your bank name");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const res = await axios.post("/withdraw", { amount });
+      const payload = {
+        amount,
+        processor: form.method,
+        account_details: buildAccountDetails(),
+      };
+
+      const res = await axios.post("/withdraw", payload);
       if (res.data?.message) {
         toast.success(res.data.message);
-        setForm({ amount: "" });
+        setForm({ amount: "", method: "momo", account_name: "", account_number: "", bank_name: "" });
         fetchData();
       }
     } catch (err: any) {
@@ -85,30 +109,10 @@ const AgentWithdrawal: React.FC = () => {
     }
   };
 
-  const handleProcessPayout = async (id: number) => {
-    setProcessingId(id);
-    toast.loading("Processing payout via Paystack...", { id: "payout-" + id });
-
-    try {
-      const res = await axios.post(`/withdrawals/${id}/process`);
-      toast.success(res.data?.message || "Payout processed!", { id: "payout-" + id });
-      fetchData();
-    } catch (err: any) {
-      const msg = err?.response?.data?.error
-        || err?.response?.data?.details
-        || "Payout failed. Please try again.";
-      toast.error(msg, { id: "payout-" + id });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
         return <CheckCircle size={14} className="text-green-400" />;
-      case "approved":
-        return <Clock size={14} className="text-blue-400" />;
       case "declined":
         return <XCircle size={14} className="text-red-400" />;
       default:
@@ -118,11 +122,8 @@ const AgentWithdrawal: React.FC = () => {
 
   const getStatusClasses = (status: string) => {
     switch (status) {
-      case "approved":
       case "completed":
-        return status === "completed"
-          ? "bg-green-500/20 text-green-400 border border-green-500/30"
-          : "bg-blue-500/20 text-blue-400 border border-blue-500/30";
+        return "bg-green-500/20 text-green-400 border border-green-500/30";
       case "declined":
         return "bg-red-500/20 text-red-400 border border-red-500/30";
       default:
@@ -170,7 +171,7 @@ const AgentWithdrawal: React.FC = () => {
 
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-5">
           <p className="text-xs text-amber-200">
-            Withdrawal requests are reviewed by an admin. Once approved, funds will be sent to your registered Paystack account. Minimum withdrawal: GHS 20.00
+            Submit your withdrawal request with account details. An admin will review and process it. Minimum withdrawal: GHS 20.00
           </p>
         </div>
 
@@ -182,12 +183,80 @@ const AgentWithdrawal: React.FC = () => {
               min="20"
               step="0.01"
               value={form.amount}
-              onChange={(e) => setForm({ amount: e.target.value })}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
               placeholder="Enter amount (min 20.00)"
               required
               className="w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-[#00C4FF] focus:border-[#00C4FF] transition"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">Payout Method</label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, method: "momo" })}
+                className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition ${
+                  form.method === "momo"
+                    ? "border-[#00C4FF] bg-[#00C4FF]/10 text-[#00C4FF]"
+                    : "border-slate-600 text-slate-400 hover:border-slate-500"
+                }`}
+              >
+                <Smartphone size={18} /> Mobile Money
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, method: "bank" })}
+                className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border transition ${
+                  form.method === "bank"
+                    ? "border-[#00C4FF] bg-[#00C4FF]/10 text-[#00C4FF]"
+                    : "border-slate-600 text-slate-400 hover:border-slate-500"
+                }`}
+              >
+                <Building2 size={18} /> Bank Transfer
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">Account Name</label>
+            <input
+              type="text"
+              value={form.account_name}
+              onChange={(e) => setForm({ ...form, account_name: e.target.value })}
+              placeholder="Name on account"
+              required
+              className="w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-[#00C4FF] focus:border-[#00C4FF] transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1">
+              {form.method === "momo" ? "Mobile Money Number" : "Account Number"}
+            </label>
+            <input
+              type="text"
+              value={form.account_number}
+              onChange={(e) => setForm({ ...form, account_number: e.target.value })}
+              placeholder={form.method === "momo" ? "e.g. 024XXXXXXX" : "e.g. 1234567890"}
+              required
+              className="w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-[#00C4FF] focus:border-[#00C4FF] transition"
+            />
+          </div>
+
+          {form.method === "bank" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Bank Name</label>
+              <input
+                type="text"
+                value={form.bank_name}
+                onChange={(e) => setForm({ ...form, bank_name: e.target.value })}
+                placeholder="e.g. GCB Bank, Ecobank, etc."
+                required
+                className="w-full p-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-[#00C4FF] focus:border-[#00C4FF] transition"
+              />
+            </div>
+          )}
 
           <button
             type="submit"
@@ -212,7 +281,7 @@ const AgentWithdrawal: React.FC = () => {
       {/* Withdrawal History */}
       <div className="bg-white/5 p-6 rounded-xl border border-white/10">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-          <ArrowDownLeft size={20} className="text-[#00C4FF]" /> Withdrawal History
+          <Clock size={20} className="text-[#00C4FF]" /> Withdrawal History
         </h3>
 
         {history.length === 0 ? (
@@ -225,7 +294,6 @@ const AgentWithdrawal: React.FC = () => {
                   <th className="pb-3 font-medium">Date</th>
                   <th className="pb-3 font-medium">Amount</th>
                   <th className="pb-3 font-medium">Status</th>
-                  <th className="pb-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -240,26 +308,6 @@ const AgentWithdrawal: React.FC = () => {
                       {w.decline_reason && (
                         <p className="text-red-400 text-xs mt-1">{w.decline_reason}</p>
                       )}
-                    </td>
-                    <td className="py-3">
-                      {w.status === "approved" ? (
-                        <button
-                          onClick={() => handleProcessPayout(w.id)}
-                          disabled={processingId === w.id}
-                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-500 transition flex items-center gap-1"
-                        >
-                          {processingId === w.id ? (
-                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <ArrowDownLeft size={14} />
-                          )}
-                          {processingId === w.id ? "Processing..." : "Withdraw Now"}
-                        </button>
-                      ) : w.status === "pending" ? (
-                        <span className="text-slate-500 text-xs italic">Awaiting approval</span>
-                      ) : w.status === "completed" ? (
-                        <span className="text-green-400 text-xs">Paid out</span>
-                      ) : null}
                     </td>
                   </tr>
                 ))}

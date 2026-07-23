@@ -93,12 +93,14 @@ class AgentWalletController extends Controller
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:20', 
+            'processor' => 'required|string|max:20',
+            'account_details' => 'required|string|max:500',
         ]);
 
         $amount = (float) $validated['amount'];
 
         try {
-            return DB::transaction(function () use ($agent, $amount) {
+            return DB::transaction(function () use ($agent, $amount, $validated) {
                 $wallet = $agent->wallet;
 
                 if (!$wallet || $wallet->total_commissions < $amount) {
@@ -111,12 +113,12 @@ class AgentWalletController extends Controller
                     'user_id' => $agent->id,
                     'wallet_id' => $wallet->id,
                     'amount' => $amount,
-                    'payout_method' => 'paystack',
-                    'account_details' => $agent->email,
+                    'payout_method' => $validated['processor'],
+                    'account_details' => $validated['account_details'],
                     'status' => WithdrawalRequest::STATUS_PENDING,
                 ]);
 
-                $wallet->decrement('total_commissions', $amount);
+                // No deduction yet — admin will deduct on approval
 
                 return response()->json([
                     'message' => 'Withdrawal request submitted successfully and is awaiting admin approval.',
@@ -136,36 +138,5 @@ class AgentWalletController extends Controller
                 'error' => 'Failed to process request. Please try again later.'
             ], 500);
         }
-    }
-
-    /**
-     * Agent confirms receipt of an approved withdrawal.
-     * Marks as completed so the admin knows to process the payout.
-     */
-    public function processPayout(Request $request, $id)
-    {
-        $agent = Auth::user();
-
-        $wr = WithdrawalRequest::where('id', $id)
-            ->where('user_id', $agent->id)
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        if ($wr->status !== WithdrawalRequest::STATUS_APPROVED) {
-            return response()->json([
-                'error' => 'This withdrawal request has not been approved yet or has already been processed.'
-            ], 400);
-        }
-
-        $wr->update([
-            'status' => WithdrawalRequest::STATUS_COMPLETED,
-            'completed_at' => now(),
-        ]);
-
-        Log::info("Withdrawal #{$wr->id}: Agent confirmed payout for GHS {$wr->amount}.");
-
-        return response()->json([
-            'message' => 'Withdrawal marked as completed. Admin will process the payout.',
-        ]);
     }
 }

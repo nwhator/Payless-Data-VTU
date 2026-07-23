@@ -266,9 +266,6 @@ Route::middleware(['auth', 'agent', 'role:agent'])->group(function () {
     // 4. SUBMIT WITHDRAWAL REQUEST (POST /api/withdraw)
     Route::post('/withdraw', [AgentWalletController::class, 'submitWithdrawalRequest']);
 
-    // 5. PROCESS APPROVED WITHDRAWAL — triggers Paystack payout (POST /api/withdrawals/{id}/process)
-    Route::post('/withdrawals/{id}/process', [AgentWalletController::class, 'processPayout']);
-
     // --- Inside your authenticated agent routes group ---
     Route::post('/agent/paystack/fund/initialize', [PaystackAgentsController::class, 'initializeFund'])->name('agent.paystack.initialize');
     
