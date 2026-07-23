@@ -24,6 +24,7 @@ const AgentWithdrawal: React.FC = () => {
   const [history, setHistory] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     amount: "",
@@ -109,11 +110,30 @@ const AgentWithdrawal: React.FC = () => {
     }
   };
 
+  const handleProcessPayout = async (id: number) => {
+    setProcessingId(id);
+    toast.loading("Processing payout via Paystack...", { id: "payout-" + id });
+
+    try {
+      const res = await axios.post(`/withdrawals/${id}/process`);
+      toast.success(res.data?.message || "Payout processed!", { id: "payout-" + id });
+      fetchData();
+    } catch (err: any) {
+      const msg = err?.response?.data?.error
+        || err?.response?.data?.details
+        || "Payout failed. Please try again.";
+      toast.error(msg, { id: "payout-" + id });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "approved":
       case "completed":
         return <CheckCircle size={14} className="text-green-400" />;
+      case "approved":
+        return <Clock size={14} className="text-blue-400" />;
       case "declined":
         return <XCircle size={14} className="text-red-400" />;
       default:
@@ -125,7 +145,9 @@ const AgentWithdrawal: React.FC = () => {
     switch (status) {
       case "approved":
       case "completed":
-        return "bg-green-500/20 text-green-400 border border-green-500/30";
+        return status === "completed"
+          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+          : "bg-blue-500/20 text-blue-400 border border-blue-500/30";
       case "declined":
         return "bg-red-500/20 text-red-400 border border-red-500/30";
       default:
@@ -303,6 +325,7 @@ const AgentWithdrawal: React.FC = () => {
                   <th className="pb-3 font-medium">Account Details</th>
                   <th className="pb-3 font-medium">Amount</th>
                   <th className="pb-3 font-medium">Status</th>
+                  <th className="pb-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -319,6 +342,26 @@ const AgentWithdrawal: React.FC = () => {
                       {w.decline_reason && (
                         <p className="text-red-400 text-xs mt-1">{w.decline_reason}</p>
                       )}
+                    </td>
+                    <td className="py-3">
+                      {w.status === "approved" ? (
+                        <button
+                          onClick={() => handleProcessPayout(w.id)}
+                          disabled={processingId === w.id}
+                          className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-500 transition flex items-center gap-1"
+                        >
+                          {processingId === w.id ? (
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <ArrowDownLeft size={14} />
+                          )}
+                          {processingId === w.id ? "Processing..." : "Withdraw Now"}
+                        </button>
+                      ) : w.status === "pending" ? (
+                        <span className="text-slate-500 text-xs italic">Awaiting approval</span>
+                      ) : w.status === "completed" ? (
+                        <span className="text-green-400 text-xs">Paid out</span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
