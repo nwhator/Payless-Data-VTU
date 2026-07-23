@@ -12,6 +12,7 @@ import {
   LogOut,
   Activity,
   Store,
+  ArrowDownLeft,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: "TOOLS",
       items: [
         { name: "My Wallet", icon: CreditCard, key: "wallet" },
+        { name: "Withdraw", icon: ArrowDownLeft, key: "withdraw" },
         { name: "Sales Stats", icon: BarChart2, key: "reports" },
       ],
     },

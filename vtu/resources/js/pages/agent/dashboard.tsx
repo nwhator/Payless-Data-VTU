@@ -10,6 +10,7 @@ import AgentProfile from "@/components/Agent/AgentProfile";
 import SupportCenter from "@/components/Agent/SupportCenter";
 import AgentStore from "@/components/Agent/AgentStore";
 import AgentCommissions from "@/components/Agent/AgentCommissions";
+import AgentWithdrawal from "@/components/Agent/AgentWithdrawal";
 import { toast } from "sonner";
 // Assuming you have access to the authenticated user object, e.g., via Inertia's usePage or a context.
 // For this example, we'll simulate getting the Agent's name.
@@ -47,6 +48,11 @@ const getMetaContent = (activeKey: string) => {
             return {
                 title: `${AGENT_NAME} | Wallet Balance & Funding`,
                 description: "Fund your wallet, check your current balance, and view all deposit and withdrawal transactions.",
+            };
+        case "withdraw":
+            return {
+                title: `${AGENT_NAME} | Withdraw Funds`,
+                description: "Request a withdrawal of your commission earnings to your mobile money or bank account.",
             };
         case "profile":
             return {
@@ -94,7 +100,8 @@ const Dashboard: React.FC = () => {
                 // For simplicity, we keep the loading logic brief, as most components handle their own data.
                 case "purchases": 
                 case "commissions": 
-                case "wallet": {
+                case "wallet":
+                case "withdraw": {
                     // Simulating a brief data fetch delay for a better UX/loading state feel
                     await new Promise(resolve => setTimeout(resolve, 300));
                     break;
@@ -167,6 +174,11 @@ const Dashboard: React.FC = () => {
                         {/* Wallet Management */}
                         {active === "wallet" && (
                             <WalletManagement />
+                        )}
+
+                        {/* Withdrawal */}
+                        {active === "withdraw" && (
+                            <AgentWithdrawal />
                         )}
 
                         {/* Agent Profile */}

@@ -82,8 +82,8 @@ const CommissionHistory: React.FC<{ history: CommissionRecord[]; isHistoryLoadin
                         <tr key={c.id} className="border-b border-white/10">
                             <td className="py-4 px-6">{new Date(c.created_at).toLocaleDateString()}</td>
                             <td className="py-4 px-6 font-mono text-xs">{c.sale_reference?.slice(0, 16)}...</td>
-                            <td className="py-4 px-6">GH₵ {c.sell_price?.toFixed(2)}</td>
-                            <td className="py-4 px-6 text-green-400 font-bold">+GH₵ {c.profit?.toFixed(2)}</td>
+                            <td className="py-4 px-6">GH₵ {Number(c.sell_price ?? 0).toFixed(2)}</td>
+                            <td className="py-4 px-6 text-green-400 font-bold">+GH₵ {Number(c.profit ?? 0).toFixed(2)}</td>
                             <td className="py-4 px-6">
                                 <span className={`px-2 py-1 rounded text-xs ${getStatusClasses(c.status)}`}>
                                     {c.status}

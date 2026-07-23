@@ -92,7 +92,7 @@ const NETWORK_OPTIONS = [
     { key: "Telecel", label: "Telecel" },
 ]
 
-const PER_PAGE_OPTIONS = [50, 100, 200, 500, 1000]
+const PER_PAGE_OPTIONS = [5, 10, 20, 50, 100]
 // --- END NEW CONSTANTS ---
 
 // Helper function to format date
@@ -122,7 +122,7 @@ const AgentSummary: React.FC<AgentSummaryProps> = ({ setActive }) => {
     const [pagination, setPagination] = useState<PaginationMeta>({
         current_page: 1,
         last_page: 1,
-        per_page: 50,
+        per_page: 5,
         total: 0,
     })
     const [filters, setFilters] = useState<OrderFilters>({

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-const GHANA_NETWORKS = ["MTN", "AirtelTigo", "Telecel", "Glo", "Vodafone"] as const;
+const GHANA_NETWORKS = ["MTN", "AirtelTigo", "Telecel"] as const;
 
 const NETWORK_KEYWORDS: Record<string, string[]> = {
   MTN: ["mtn"],

@@ -27,7 +27,7 @@ interface Store {
 // ------------------------------------
 
 // --- Network grouping helpers ---
-const GHANA_NETWORKS = ["MTN", "AirtelTigo", "Telecel", "Glo", "Vodafone"] as const;
+const GHANA_NETWORKS = ["MTN", "AirtelTigo", "Telecel"] as const;
 
 const NETWORK_KEYWORDS: Record<string, string[]> = {
   MTN: ["mtn"],
